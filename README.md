@@ -6,3 +6,6 @@
 
 ## 研究動機
 ### https://github.com/Penter405/recycle/tree/reason
+
+## 別人寫的 數學 密碼學 程式
+### https://github.com/ccccourse/algml/tree/master/A1-%E5%85%B6%E4%BB%96
