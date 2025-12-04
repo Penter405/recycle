@@ -5,6 +5,6 @@
 ![alt text](image.png)
 
 
-### code are made by Gemini
+### code are made by Gemini on google colab
 
 
