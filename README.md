@@ -1,4 +1,5 @@
 # 分類輔助系統
+## [簡報連結](https://www.canva.com/design/DAG71nhsHXA/wDaD5GFnvhLfIVrLWke_WA/edit?utm_content=DAG71nhsHXA&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 ## 書面報告
 ### https://docs.google.com/document/d/1PA1rbOGiks_jVuiihVLjOsQHqjzyn9rhXuNY-YoAa3o/edit?usp=sharing
 ## 私人文件
