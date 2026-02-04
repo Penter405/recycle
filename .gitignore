@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+.gemini/
+train/
+result/
+tfjs_env/
+temp_trashnet/
+docs/model/*.h5
+docs/model/*.keras

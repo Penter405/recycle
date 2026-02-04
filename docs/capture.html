@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>📷 訓練資料收集工具</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981;
+            --bg: linear-gradient(135deg, #1e3a5f 0%, #0f766e 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            color: white;
+            padding: 16px;
+            padding-bottom: env(safe-area-inset-bottom, 16px);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .category-select {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-btn {
+            padding: 10px 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .category-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 16px;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        #video,
+        #canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #canvas {
+            display: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-capture {
+            background: white;
+            color: #0f766e;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-capture:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-download {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .stats {
+            text-align: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stats-number {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        .preview-item {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-item .delete-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .instructions {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .instructions h3 {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📷 訓練資料收集工具</h1>
+
+    <div class="category-select">
+        <button class="category-btn active" data-category="paper_container">🥡 紙餐盒</button>
+        <button class="category-btn" data-category="tetra_pak">🧃 鋁箔包</button>
+    </div>
+
+    <div class="camera-container">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-capture" id="captureBtn">📸 拍攝</button>
+        <button class="btn btn-download" id="downloadBtn">💾 下載全部</button>
+    </div>
+
+    <div class="stats">
+        <div>目前類別: <strong id="currentCategory">紙餐盒</strong></div>
+        <div class="stats-number" id="captureCount">0</div>
+        <div>張已拍攝</div>
+    </div>
+
+    <div class="preview-grid" id="previewGrid"></div>
+
+    <div class="instructions">
+        <h3>📝 拍攝指南</h3>
+        <p><strong>紙餐盒:</strong> 紙便當盒、紙杯、紙碗、紙盤</p>
+        <p><strong>鋁箔包:</strong> 利樂包、鋁箔飲料盒、牛奶盒、果汁盒</p>
+        <p>💡 技巧: 單一物品、乾淨背景、多角度拍攝</p>
+    </div>
+
+    <script>
+        // 儲存拍攝的圖片
+        const capturedImages = {
+            paper_container: [],
+            tetra_pak: []
+        };
+
+        let currentCategory = 'paper_container';
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 初始化相機
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 640 } }
+                });
+                video.srcObject = stream;
+            } catch (err) {
+                alert('無法啟動相機: ' + err.message);
+            }
+        }
+
+        // 切換類別
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentCategory = btn.dataset.category;
+                document.getElementById('currentCategory').textContent =
+                    currentCategory === 'paper_container' ? '紙餐盒' : '鋁箔包';
+                updateUI();
+            });
+        });
+
+        // 拍攝
+        document.getElementById('captureBtn').addEventListener('click', () => {
+            canvas.width = 224;
+            canvas.height = 224;
+
+            // 從 video 中央裁切正方形
+            const size = Math.min(video.videoWidth, video.videoHeight);
+            const x = (video.videoWidth - size) / 2;
+            const y = (video.videoHeight - size) / 2;
+
+            ctx.drawImage(video, x, y, size, size, 0, 0, 224, 224);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            capturedImages[currentCategory].push(dataUrl);
+
+            updateUI();
+
+            // 拍攝動畫
+            document.querySelector('.camera-container').style.opacity = '0.5';
+            setTimeout(() => {
+                document.querySelector('.camera-container').style.opacity = '1';
+            }, 100);
+        });
+
+        // 更新 UI
+        function updateUI() {
+            const images = capturedImages[currentCategory];
+            document.getElementById('captureCount').textContent = images.length;
+
+            const grid = document.getElementById('previewGrid');
+            grid.innerHTML = images.map((img, i) => `
+                <div class="preview-item">
+                    <img src="${img}" alt="Photo ${i + 1}">
+                    <button class="delete-btn" onclick="deleteImage(${i})">×</button>
+                </div>
+            `).join('');
+        }
+
+        // 刪除圖片
+        window.deleteImage = function (index) {
+            capturedImages[currentCategory].splice(index, 1);
+            updateUI();
+        };
+
+        // 下載全部
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const images = capturedImages[currentCategory];
+            if (images.length === 0) {
+                alert('尚未拍攝任何圖片');
+                return;
+            }
+
+            images.forEach((dataUrl, i) => {
+                const link = document.createElement('a');
+                link.download = `${currentCategory}_${Date.now()}_${i}.jpg`;
+                link.href = dataUrl;
+                link.click();
+            });
+
+            alert(`已下載 ${images.length} 張圖片\n請將檔案移動到:\ntrain/${currentCategory}/`);
+        });
+
+        // 初始化
+        initCamera();
+    </script>
+</body>
+
+</html>
