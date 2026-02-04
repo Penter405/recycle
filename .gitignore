@@ -8,3 +8,4 @@ tfjs_env/
 temp_trashnet/
 docs/model/*.h5
 docs/model/*.keras
+red.txt
