@@ -1,11 +1,33 @@
+# Python
 __pycache__/
-*.pyc
-.env
-.gemini/
-train/
-result/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*_env/
+
+# Virtual environments
+tf215_env/
 tfjs_env/
-temp_trashnet/
-docs/model/*.h5
-docs/model/*.keras
+wsl_tfjs_env/
+
+# Model training artifacts
+*.h5
+*.keras
+result/
+
+# Test files
+test*.jpg
+test*.png
+user_test*
 red.txt
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
