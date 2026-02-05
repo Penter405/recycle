@@ -22,9 +22,16 @@ const CONFIG = {
         LOW_CONFIDENCE_MESSAGE: '無法辨識，請調整角度或光線後重試'
     },
 
-    // ===== 類別定義 (5 個類別) =====
-    // 順序必須與模型輸出一致：garbage, metal_can, paper, paper_container, plastic
+    // ===== 類別定義 (6 個類別) =====
+    // 順序必須與模型輸出一致：aseptic carton, garbage, metal_can, paper, paper_container, plastic
     CATEGORIES: [
+        {
+            id: 'aseptic carton',
+            name: '鋁箔包',
+            icon: '🧃',
+            color: '#20c997',
+            description: '利樂包、鋁箔包飲料盒，需壓扁回收'
+        },
         {
             id: 'garbage',
             name: '垃圾',

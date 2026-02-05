@@ -16,7 +16,7 @@ wsl_tfjs_env/
 # Model training artifacts
 *.h5
 *.keras
-result/
+useless/
 
 # Test files
 test*.jpg

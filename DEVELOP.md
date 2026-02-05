@@ -65,63 +65,79 @@ pip install tensorflow tensorflowjs Pillow requests
 
 ## 模型訓練
 
-### 1. 收集訓練資料
+### 使用 Teachable Machine（推薦）
 
-```bash
-# 下載 TrashNet 資料集
-python collect_data.py
+由於 TensorFlow 版本相容性問題（Keras 3 vs TFJS），建議使用 [Teachable Machine](https://teachablemachine.withgoogle.com/) 訓練模型。
+
+#### 1. 準備訓練資料
+
+將訓練照片整理到 `train/` 資料夾：
+
+```
+train/
+├── aseptic carton/    # 鋁箔包
+├── garbage/           # 一般垃圾
+├── metal_can/         # 鐵鋁罐
+├── paper/             # 紙類
+├── paper_container/   # 紙餐盒
+└── plastic/           # 塑膠類
 ```
 
-資料會自動整理到 `train/` 目錄下的對應類別資料夾。
+> **注意**: 類別名稱會成為模型輸出的 label，必須與 `config.js` 中的 `CATEGORIES[].id` 一致。
 
-### 2. 手動補充資料
+#### 2. 在 Teachable Machine 訓練
 
-對於 TrashNet 沒有的類別（如紙餐盒），可以使用：
+1. 開啟 https://teachablemachine.withgoogle.com/
+2. 選擇 **Image Project** → **Standard image model**
+3. 為每個類別新增 Class，名稱要與資料夾名稱相同
+4. 上傳對應資料夾的照片
+5. 點擊 **Train Model** 開始訓練
+6. 訓練完成後，點擊 **Export Model**
+7. 選擇 **Tensorflow.js** → **Download**
 
-1. 開啟 `docs/capture.html`
-2. 用手機拍攝物品
-3. 下載後放到對應資料夾
+#### 3. 部署模型到網站
 
-### 3. 訓練模型
+1. 解壓縮下載的檔案，會得到：
+   - `model.json` - 模型架構
+   - `weights.bin` - 模型權重
+   - `metadata.json` - 類別標籤
 
-```bash
-python train_model.py
-```
+2. 複製這 3 個檔案到 `docs/model/` 資料夾：
+   ```bash
+   copy result\模型資料夾\*.* docs\model\
+   ```
 
-訓練參數：
-- **基礎模型**: MobileNetV2 (ImageNet 預訓練)
-- **輸入尺寸**: 224×224
-- **Batch Size**: 16
-- **Epochs**: 20 (Early Stopping)
-- **資料增強**: 旋轉、平移、縮放、翻轉
+#### 4. 更新類別設定
 
-### 4. 轉換為 TensorFlow.js
-
-由於 Python 3.13 與 tensorflowjs 的相容性問題，建議使用 Google Colab：
-
-```python
-!pip install tensorflowjs
-import tensorflowjs as tfjs
-import tensorflow as tf
-
-model = tf.keras.models.load_model('model.h5')
-tfjs.converters.save_keras_model(model, 'tfjs_model')
-```
-
-### 5. 類別順序
-
-**重要**: `config.js` 中的 `CATEGORIES` 順序必須與模型輸出一致：
+如果類別有變動，需要同步更新 `docs/config.js` 中的 `CATEGORIES`：
 
 ```javascript
-// 順序: garbage, metal_can, paper, paper_container, plastic
+// 順序必須與 metadata.json 中的 labels 順序一致
 CATEGORIES: [
-    { id: 'garbage', ... },
-    { id: 'metal_can', ... },
-    { id: 'paper', ... },
-    { id: 'paper_container', ... },
-    { id: 'plastic', ... }
+    { id: 'aseptic carton', name: '鋁箔包', icon: '🧃', ... },
+    { id: 'garbage', name: '垃圾', icon: '🗑️', ... },
+    // ...
 ]
 ```
+
+#### 5. 測試
+
+```bash
+cd docs
+python -m http.server 8000
+# 開啟 http://localhost:8000 測試
+```
+
+### Teachable Machine 範例程式碼
+
+模型匯出時會提供 `example.js`，可參考其載入方式：
+
+```javascript
+// 使用 @teachablemachine/image 庫載入
+const model = await tmImage.load(modelURL, metadataURL);
+const predictions = await model.predict(imageElement);
+```
+
 
 ---
 
