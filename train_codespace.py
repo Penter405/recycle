@@ -82,16 +82,87 @@ def main():
     
     print(f"\n📈 最終驗證準確率: {history.history['val_accuracy'][-1]:.2%}")
     
-    # 匯出 TFJS
-    print("\n📦 匯出 TensorFlow.js...")
+    # 先儲存 H5 格式
+    print("\n📦 儲存模型...")
     os.makedirs(MODEL_DIR, exist_ok=True)
+    h5_path = os.path.join(MODEL_DIR, "model.h5")
+    model.save(h5_path)
+    print(f"  ✅ H5 模型已儲存: {h5_path}")
     
-    import tensorflowjs as tfjs
-    tfjs.converters.save_keras_model(model, MODEL_DIR)
+    # 匯出 TFJS (使用命令行)
+    print("\n📦 轉換為 TensorFlow.js...")
+    import subprocess
+    result = subprocess.run([
+        'tensorflowjs_converter',
+        '--input_format=keras',
+        h5_path,
+        MODEL_DIR
+    ], capture_output=True, text=True)
+    
+    if result.returncode != 0:
+        print(f"  ⚠️ 轉換輸出: {result.stderr}")
+    
+    # 修復 model.json 相容性
+    print("\n🔧 修復 model.json 相容性...")
+    model_json_path = os.path.join(MODEL_DIR, "model.json")
+    if os.path.exists(model_json_path):
+        with open(model_json_path, 'r') as f:
+            data = json.load(f)
+        
+        # 修復 InputLayer
+        def fix_layer(layer):
+            cfg = layer.get('config', {})
+            if layer.get('class_name') == 'InputLayer':
+                if 'batch_shape' in cfg:
+                    cfg['batchInputShape'] = cfg.pop('batch_shape')
+            if 'dtype' in cfg and isinstance(cfg['dtype'], dict):
+                cfg['dtype'] = cfg['dtype'].get('config', {}).get('name', 'float32')
+            for key in ['kernel_initializer', 'bias_initializer', 'depthwise_initializer']:
+                if key in cfg and isinstance(cfg[key], dict):
+                    for rm in ['module', 'registered_name']:
+                        cfg[key].pop(rm, None)
+        
+        def fix_nodes(nodes):
+            fixed = []
+            for node in nodes:
+                if isinstance(node, dict) and 'args' in node:
+                    args = node.get('args', [])
+                    if args and isinstance(args[0], dict):
+                        h = args[0].get('config', {}).get('keras_history', [])
+                        if h:
+                            fixed.append([[h[0], h[1], h[2], {}]])
+                        else:
+                            fixed.append([])
+                    elif args and isinstance(args[0], list):
+                        inputs = []
+                        for item in args[0]:
+                            if isinstance(item, dict):
+                                h = item.get('config', {}).get('keras_history', [])
+                                if h:
+                                    inputs.append([h[0], h[1], h[2], {}])
+                        fixed.append(inputs if inputs else [])
+                    else:
+                        fixed.append([])
+                else:
+                    fixed.append(node if isinstance(node, list) else [])
+            return fixed
+        
+        topology = data.get('modelTopology', {}).get('model_config', {}).get('config', {})
+        for layer in topology.get('layers', []):
+            fix_layer(layer)
+            if 'inbound_nodes' in layer:
+                layer['inbound_nodes'] = fix_nodes(layer['inbound_nodes'])
+        
+        with open(model_json_path, 'w') as f:
+            json.dump(data, f, separators=(',', ':'))
+        print("  ✅ model.json 已修復")
     
     # 儲存標籤
     with open(os.path.join(MODEL_DIR, "labels.json"), 'w') as f:
         json.dump(CATEGORIES, f, indent=2)
+    
+    # 清理 H5
+    os.remove(h5_path)
     
     print(f"\n✅ 模型已匯出至 {MODEL_DIR}/")
     print("\n下一步: git add, commit, push 到 GitHub Pages")
