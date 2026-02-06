@@ -152,28 +152,38 @@ async function initCamera() {
  */
 async function loadModel() {
     updateStatus('正在載入模型...', 'loading');
+    console.log('[DEBUG] 開始載入模型...');
+    console.log('[DEBUG] CONFIG.MODEL.URL:', CONFIG.MODEL.URL);
+    console.log('[DEBUG] CONFIG.MODEL.IS_CUSTOM_MODEL:', CONFIG.MODEL.IS_CUSTOM_MODEL);
 
     try {
         // 檢查是否有自訓練模型
         if (CONFIG.MODEL.IS_CUSTOM_MODEL) {
+            console.log('[DEBUG] 嘗試載入自訓練模型...');
             // 使用標準 TensorFlow.js 載入 Colab 訓練的模型
             AppState.model = await tf.loadLayersModel(CONFIG.MODEL.URL);
-            console.log('Colab 訓練模型載入成功');
+            console.log('[DEBUG] ✅ Colab 訓練模型載入成功');
+            console.log('[DEBUG] 模型輸入形狀:', AppState.model.inputs[0].shape);
+            console.log('[DEBUG] 模型輸出形狀:', AppState.model.outputs[0].shape);
         } else {
+            console.log('[DEBUG] 嘗試載入 MobileNetV2...');
             // 使用預訓練的 MobileNetV2 (用於展示)
             AppState.model = await mobilenet.load({
                 version: 2,
                 alpha: 1.0
             });
-            console.log('MobileNetV2 預訓練模型載入成功');
+            console.log('[DEBUG] ✅ MobileNetV2 預訓練模型載入成功');
         }
 
         AppState.isModelLoaded = true;
         updateStatus('🚀 系統就緒', 'ready');
 
     } catch (error) {
-        console.error('模型載入失敗:', error);
-        updateStatus('⚠️ 模型載入失敗', 'error');
+        console.error('[DEBUG] ❌ 模型載入失敗!');
+        console.error('[DEBUG] 錯誤類型:', error.name);
+        console.error('[DEBUG] 錯誤訊息:', error.message);
+        console.error('[DEBUG] 完整錯誤堆疊:', error.stack);
+        updateStatus('⚠️ 模型載入失敗: ' + error.message, 'error');
     }
 }
 
