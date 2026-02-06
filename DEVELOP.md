@@ -13,6 +13,9 @@
 
 ## 環境需求
 
+### colab 訓練環境
+[my colab](https://colab.research.google.com/drive/1gti8Y3f7MtA33J7oZJjRGXZR-tdpJkJX#scrollTo=X8HDRGkfXFNX)
+
 ### Python 訓練環境
 
 ```bash

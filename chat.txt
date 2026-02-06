@@ -1,0 +1,74 @@
+這是一個經典的 「版本地獄 (Version Hell)」。你的 CPU 不支援 AVX 限制了本地端環境，而雲端（Colab/Codespaces）預設版本太新，導致產出的 Keras 3 格式與 TensorFlow.js (TF.js) 脫節。
+以下是針對你列出的 4 個問題的 最終調試與解決方案：
+1. 解決 Keras 3 格式不匹配 (最核心問題)
+Keras 3 (TF 2.16+) 導出的 .h5 或 .keras 檔案結構與 TF.js 目前預期的 Legacy Keras 格式不同。
+解決方法： 在訓練代碼的最頂端，強迫使用 Legacy Keras 存檔，或是在存檔時指定格式。
+代碼修正：
+python
+# 在訓練環境中執行
+import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1" # 強制使用舊版 Keras 邏輯
+
+# 存檔時，請存成舊版的 .h5 格式，而不是 .keras
+model.save("my_model.h5") 
+請謹慎使用程式碼。
+
+2. 解決 NumPy 與 tensorflowjs 衝突
+這是因為 tensorflowjs 轉換工具還沒跟上 numpy 2.0。
+解決方法： 在轉換環境（如 Codespaces 或 Colab）中，手動降級 NumPy 和安裝兼容的轉換器。
+執行指令：
+bash
+pip install "numpy<2" "tensorflowjs>=4.20.0"
+請謹慎使用程式碼。
+
+3. 解決 CPU 不支援 AVX (本機無法執行的問題)
+既然本機 CPU 沒救了，請放棄在本機訓練。完全轉移到 Google Colab。
+為什麼選 Colab？ 它的 CPU 支援 AVX，且有免費 GPU。
+如何避免版本問題？ 在 Colab 裡安裝指定版本：
+python
+!pip install tensorflow==2.15.0  # 這是最後一個穩定支援舊版 Keras 格式的版本
+!pip install tensorflowjs
+請謹慎使用程式碼。
+
+4. 調試與轉換流程 (標準 SOP)
+請按照這個順序在 Colab 重新執行，產出的檔案在 GitHub Pages 就會正常：
+安裝穩定環境：
+python
+!pip install tensorflow==2.15.0 tensorflowjs numpy==1.23.5
+請謹慎使用程式碼。
+
+訓練並存為 H5：
+python
+# ... 訓練代碼 ...
+model.save("recycle_model.h5")
+請謹慎使用程式碼。
+
+使用命令行轉換：
+bash
+!tensorflowjs_converter --input_format=keras recycle_model.h5 ./tfjs_model
+請謹慎使用程式碼。
+
+檢查 model.json：
+打開檔案，搜尋有沒有 batch_input_shape。如果是 batch_shape 且報錯，通常是因為 TF.js 版本太舊，請確保網頁端的 CDN 是 @latest。
+5. GitHub Pages 端的檢查 (Debug JavaScript)
+在網頁端，請把載入代碼包在 try-catch 裡，這能抓到具體的「不相容變數」：
+javascript
+async function load() {
+    try {
+        const model = await tf.loadLayersModel('./model/model.json');
+    } catch (e) {
+        console.error("具體不相容原因: ", e.message);
+        // 如果看到 "Unknown layer: FixedDense"，代表模型用了不標準的層
+    }
+}
+請謹慎使用程式碼。
+
+最後建議：
+如果你在 Keras 裡用了 Normalization 或 Rescaling 層，請將它們移除，改在 JavaScript 裡處理圖片：
+javascript
+// JS 預處理代替 Keras 層
+const tensor = tf.browser.fromPixels(imageElement)
+    .resizeNearestNeighbor([224, 224])
+    .toFloat()
+    .div(tf.scalar(255.0)); // 手動做 rescaling
+請謹慎使用程式碼。

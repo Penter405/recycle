@@ -156,15 +156,11 @@ async function loadModel() {
     try {
         // 檢查是否有自訓練模型
         if (CONFIG.MODEL.IS_CUSTOM_MODEL) {
-            // 使用 Teachable Machine 載入模型
-            const modelURL = CONFIG.MODEL.URL;
-            const metadataURL = './model/metadata.json';
-
-            AppState.model = await tmImage.load(modelURL, metadataURL);
-            console.log('Teachable Machine 模型載入成功');
+            // 使用標準 TensorFlow.js 載入 Colab 訓練的模型
+            AppState.model = await tf.loadLayersModel(CONFIG.MODEL.URL);
+            console.log('Colab 訓練模型載入成功');
         } else {
             // 使用預訓練的 MobileNetV2 (用於展示)
-            // 注意: 這個模型是 ImageNet 1000 類別，需要類別映射
             AppState.model = await mobilenet.load({
                 version: 2,
                 alpha: 1.0
@@ -239,31 +235,35 @@ async function predict(imageElement) {
 }
 
 /**
- * 使用自訓練模型預測 (Teachable Machine)
+ * 使用自訓練模型預測 (Colab 訓練的標準 TF.js 模型)
  */
 async function predictWithCustomModel(imageElement) {
-    // Teachable Machine 的 predict 直接返回分類結果
-    const predictions = await AppState.model.predict(imageElement);
+    // 預處理圖片 - 手動做 rescaling (因為 Keras 的 Rescaling 層可能不被 TF.js 支援)
+    const tensor = tf.browser.fromPixels(imageElement)
+        .resizeNearestNeighbor([CONFIG.MODEL.INPUT_SIZE, CONFIG.MODEL.INPUT_SIZE])
+        .toFloat()
+        .div(tf.scalar(255))
+        .expandDims();
+
+    // 執行預測
+    const predictions = await AppState.model.predict(tensor).data();
+    tensor.dispose();
 
     // 找出最高信心度的類別
     let maxIndex = 0;
-    let maxConfidence = predictions[0].probability;
+    let maxConfidence = predictions[0];
 
     for (let i = 1; i < predictions.length; i++) {
-        if (predictions[i].probability > maxConfidence) {
-            maxConfidence = predictions[i].probability;
+        if (predictions[i] > maxConfidence) {
+            maxConfidence = predictions[i];
             maxIndex = i;
         }
     }
 
-    // 從 className 找到對應的 CONFIG.CATEGORIES
-    const predictedClassName = predictions[maxIndex].className;
-    const category = CONFIG.CATEGORIES.find(c => c.id === predictedClassName) || CONFIG.CATEGORIES[maxIndex];
-
     return {
-        category: category,
+        category: CONFIG.CATEGORIES[maxIndex],
         confidence: maxConfidence,
-        allPredictions: predictions.map(p => p.probability)
+        allPredictions: Array.from(predictions)
     };
 }
 
