@@ -1,4 +1,14 @@
 export default async function handler(req, res) {
+    // 設置 CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    // 處理 OPTIONS 預檢請求
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
     // 只允許 POST 請求
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
