@@ -6,10 +6,14 @@
 const CONFIG = {
     // ===== 模型設定 =====
     MODEL: {
-        // 模型路徑 (TensorFlow.js 格式)
-        URL: './model/model.json',
+        // 模型路徑 (Teachable Machine 格式)
+        URL: './model/',
+        // Metadata 路徑
+        METADATA_URL: './model/metadata.json',
         // 輸入圖片尺寸
         INPUT_SIZE: 224,
+        // 是否使用 Teachable Machine 模型
+        IS_TEACHABLE_MACHINE: true,
         // 是否已載入自訓練模型
         IS_CUSTOM_MODEL: true
     },

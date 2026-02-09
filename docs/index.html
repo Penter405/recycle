@@ -127,6 +127,45 @@
             </section>
         </main>
 
+        <!-- ===== AI Chat Bottom Sheet ===== -->
+        <div class="ai-chat-sheet" id="ai-chat-sheet">
+            <!-- 拖曳把手 + 展開按鈕 -->
+            <div class="ai-chat-handle" id="ai-chat-handle">
+                <div class="handle-bar"></div>
+                <button class="ai-chat-toggle" id="ai-chat-toggle" aria-label="展開 AI 對話">
+                    <span class="toggle-icon">🤖</span>
+                </button>
+            </div>
+
+            <!-- 聊天區域 -->
+            <div class="ai-chat-content">
+                <!-- 背景警告文字 -->
+                <div class="ai-chat-disclaimer">
+                    這是個免費的服務，你的文字與圖片可能會被 Google 用來訓練模型。
+                </div>
+
+                <!-- 訊息列表 -->
+                <div class="ai-chat-messages" id="ai-chat-messages">
+                    <!-- 歡迎訊息 -->
+                    <div class="chat-message ai-message">
+                        <span class="message-avatar">🤖</span>
+                        <div class="message-bubble">
+                            你好！我是回收小助手。拍攝物品後，可以問我任何回收相關的問題！
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 輸入區 -->
+                <div class="ai-chat-input-area">
+                    <input type="text" class="ai-chat-input" id="ai-chat-input" placeholder="輸入你的問題..."
+                        autocomplete="off">
+                    <button class="ai-chat-send" id="ai-chat-send" aria-label="發送">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== Footer ===== -->
         <footer class="app-footer">
             <p>Made with ♥ | <a href="https://github.com" target="_blank" rel="noopener">GitHub</a></p>
@@ -139,6 +178,9 @@
     <!-- ===== Scripts ===== -->
     <!-- TensorFlow.js (latest version for best compatibility) -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <!-- Teachable Machine Image Library -->
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
     <!-- MobileNet (for fallback/demo mode only) -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0/dist/mobilenet.min.js"></script>
 

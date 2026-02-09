@@ -154,11 +154,22 @@ async function loadModel() {
     updateStatus('正在載入模型...', 'loading');
     console.log('[DEBUG] 開始載入模型...');
     console.log('[DEBUG] CONFIG.MODEL.URL:', CONFIG.MODEL.URL);
-    console.log('[DEBUG] CONFIG.MODEL.IS_CUSTOM_MODEL:', CONFIG.MODEL.IS_CUSTOM_MODEL);
+    console.log('[DEBUG] CONFIG.MODEL.IS_TEACHABLE_MACHINE:', CONFIG.MODEL.IS_TEACHABLE_MACHINE);
 
     try {
-        // 檢查是否有自訓練模型
-        if (CONFIG.MODEL.IS_CUSTOM_MODEL) {
+        // 檢查是否使用 Teachable Machine 模型
+        if (CONFIG.MODEL.IS_TEACHABLE_MACHINE) {
+            console.log('[DEBUG] 嘗試載入 Teachable Machine 模型...');
+            const modelURL = CONFIG.MODEL.URL + 'model.json';
+            const metadataURL = CONFIG.MODEL.URL + 'metadata.json';
+
+            // 使用 Teachable Machine 庫載入模型
+            AppState.model = await tmImage.load(modelURL, metadataURL);
+            AppState.maxPredictions = AppState.model.getTotalClasses();
+
+            console.log('[DEBUG] ✅ Teachable Machine 模型載入成功');
+            console.log('[DEBUG] 類別數量:', AppState.maxPredictions);
+        } else if (CONFIG.MODEL.IS_CUSTOM_MODEL) {
             console.log('[DEBUG] 嘗試載入自訓練模型...');
             // 使用標準 TensorFlow.js 載入 Colab 訓練的模型
             AppState.model = await tf.loadLayersModel(CONFIG.MODEL.URL);
@@ -245,9 +256,37 @@ async function predict(imageElement) {
 }
 
 /**
- * 使用自訓練模型預測 (Colab 訓練的標準 TF.js 模型)
+ * 使用自訓練模型預測 (支持 Teachable Machine 和 Colab 訓練的模型)
  */
 async function predictWithCustomModel(imageElement) {
+    // 檢查是否使用 Teachable Machine 模型
+    if (CONFIG.MODEL.IS_TEACHABLE_MACHINE) {
+        // 使用 Teachable Machine 預測
+        const predictions = await AppState.model.predict(imageElement);
+
+        // 找出最高信心度的類別
+        let maxIndex = 0;
+        let maxConfidence = predictions[0].probability;
+
+        for (let i = 1; i < predictions.length; i++) {
+            if (predictions[i].probability > maxConfidence) {
+                maxConfidence = predictions[i].probability;
+                maxIndex = i;
+            }
+        }
+
+        // 根據 className 找到對應的 CONFIG.CATEGORIES
+        const predictedClassName = predictions[maxIndex].className;
+        const category = CONFIG.CATEGORIES.find(cat => cat.id === predictedClassName) || CONFIG.CATEGORIES[maxIndex];
+
+        return {
+            category: category,
+            confidence: maxConfidence,
+            allPredictions: predictions.map(p => p.probability)
+        };
+    }
+
+    // 原有的 Colab 訓練模型預測邏輯
     // 預處理圖片 - 手動做 rescaling (因為 Keras 的 Rescaling 層可能不被 TF.js 支援)
     const tensor = tf.browser.fromPixels(imageElement)
         .resizeNearestNeighbor([CONFIG.MODEL.INPUT_SIZE, CONFIG.MODEL.INPUT_SIZE])
@@ -522,4 +561,279 @@ async function getAIExplanation(category) {
         console.error('AI 解說請求失敗:', error);
         return null;
     }
+}
+
+// ===== AI Chat Bottom Sheet =====
+
+const AIChatState = {
+    isExpanded: false,
+    didMainSubmit: false,
+    currentPhoto: null,
+    conversationHistory: [],
+    isProcessing: false
+};
+
+let AIChatElements = {};
+
+// 初始化 AI Chat 元素和監聽器
+document.addEventListener('DOMContentLoaded', () => {
+    initAIChatElements();
+    initAIChatListeners();
+});
+
+function initAIChatElements() {
+    AIChatElements = {
+        sheet: document.getElementById('ai-chat-sheet'),
+        handle: document.getElementById('ai-chat-handle'),
+        toggle: document.getElementById('ai-chat-toggle'),
+        messages: document.getElementById('ai-chat-messages'),
+        input: document.getElementById('ai-chat-input'),
+        sendBtn: document.getElementById('ai-chat-send')
+    };
+}
+
+function initAIChatListeners() {
+    // 展開/收合按鈕
+    AIChatElements.toggle?.addEventListener('click', toggleAIChat);
+
+    // 滑動手勢
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    AIChatElements.handle?.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+    });
+
+    AIChatElements.handle?.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+
+        // 只允許向下滑動收合，向上滑動展開
+        if (AIChatState.isExpanded && deltaY > 0) {
+            // 展開狀態下向下滑動 → 收合
+            e.preventDefault();
+        } else if (!AIChatState.isExpanded && deltaY < 0) {
+            // 收合狀態下向上滑動 → 展開
+            e.preventDefault();
+        }
+    });
+
+    AIChatElements.handle?.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+
+        const deltaY = currentY - startY;
+        const threshold = 50; // 滑動閾值
+
+        if (Math.abs(deltaY) > threshold) {
+            if (deltaY > 0 && AIChatState.isExpanded) {
+                // 向下滑動超過閾值 → 收合
+                closeAIChat();
+            } else if (deltaY < 0 && !AIChatState.isExpanded) {
+                // 向上滑動超過閾值 → 展開
+                openAIChat();
+            }
+        }
+    });
+
+    // 發送按鈕
+    AIChatElements.sendBtn?.addEventListener('click', sendMessage);
+
+    // Enter 鍵發送
+    AIChatElements.input?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // 監聽主要辨識按鈕，標記 didMainSubmit
+    Elements.checkBtn?.addEventListener('click', () => {
+        // 當用戶點擊「檢查辨識」後，標記為新的回收物
+        setTimeout(() => {
+            if (AppState.currentResult) {
+                AIChatState.didMainSubmit = true;
+                // 保存當前畫面為 base64
+                captureCurrentPhoto();
+            }
+        }, 100);
+    });
+}
+
+function toggleAIChat() {
+    if (AIChatState.isExpanded) {
+        closeAIChat();
+    } else {
+        openAIChat();
+    }
+}
+
+function openAIChat() {
+    AIChatState.isExpanded = true;
+    AIChatElements.sheet?.classList.add('expanded');
+}
+
+function closeAIChat() {
+    AIChatState.isExpanded = false;
+    AIChatElements.sheet?.classList.remove('expanded');
+}
+
+// 擷取當前圖片為 base64
+function captureCurrentPhoto() {
+    if (!Elements.canvas) return;
+
+    try {
+        // 將 canvas 轉為 base64
+        AIChatState.currentPhoto = Elements.canvas.toDataURL('image/jpeg', 0.8);
+        console.log('[AI Chat] 已保存當前圖片');
+    } catch (error) {
+        console.error('[AI Chat] 圖片擷取失敗:', error);
+        AIChatState.currentPhoto = null;
+    }
+}
+
+// 發送訊息
+async function sendMessage() {
+    const message = AIChatElements.input?.value.trim();
+    if (!message || AIChatState.isProcessing) return;
+
+    // 清空輸入框
+    if (AIChatElements.input) AIChatElements.input.value = '';
+
+    // 添加用戶訊息到聊天
+    addMessageToChat('user', message);
+
+    // 檢查是否需要傳送圖片
+    const shouldSendPhoto = AIChatState.didMainSubmit;
+    const photoToSend = shouldSendPhoto ? AIChatState.currentPhoto : null;
+
+    // 重置 didMainSubmit
+    if (shouldSendPhoto) {
+        AIChatState.didMainSubmit = false;
+    }
+
+    // 顯示載入動畫
+    const loadingId = addLoadingMessage();
+
+    AIChatState.isProcessing = true;
+    AIChatElements.sendBtn?.setAttribute('disabled', 'true');
+
+    try {
+        // 呼叫 API
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                message,
+                image: photoToSend,
+                conversationHistory: AIChatState.conversationHistory,
+                category: AppState.currentResult?.category
+            })
+        });
+
+        // 移除載入動畫
+        removeMessage(loadingId);
+
+        if (!response.ok) {
+            if (response.status === 429) {
+                // Rate Limit 錯誤
+                addMessageToChat('error', '今日 AI 額度已用完，請明天再試！😅');
+            } else {
+                throw new Error(`API Error: ${response.status}`);
+            }
+            return;
+        }
+
+        const data = await response.json();
+
+        if (data.reply) {
+            // 添加 AI 回覆
+            addMessageToChat('ai', data.reply);
+
+            // 更新對話歷史
+            AIChatState.conversationHistory.push(
+                { role: 'user', content: message },
+                { role: 'assistant', content: data.reply }
+            );
+        }
+
+    } catch (error) {
+        console.error('[AI Chat] 發送失敗:', error);
+        removeMessage(loadingId);
+        addMessageToChat('error', '發送失敗，請稍後再試。');
+    } finally {
+        AIChatState.isProcessing = false;
+        AIChatElements.sendBtn?.removeAttribute('disabled');
+    }
+}
+
+// 添加訊息到聊天視窗
+function addMessageToChat(type, content) {
+    if (!AIChatElements.messages) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${type}-message`;
+
+    if (type === 'error') {
+        messageDiv.innerHTML = `
+            <span class="message-avatar">⚠️</span>
+            <div class="message-bubble">${content}</div>
+        `;
+    } else if (type === 'user') {
+        messageDiv.innerHTML = `
+            <span class="message-avatar">👤</span>
+            <div class="message-bubble">${escapeHtml(content)}</div>
+        `;
+    } else if (type === 'ai') {
+        messageDiv.innerHTML = `
+            <span class="message-avatar">🤖</span>
+            <div class="message-bubble">${escapeHtml(content)}</div>
+        `;
+    }
+
+    AIChatElements.messages.appendChild(messageDiv);
+
+    // 滾動到底部
+    AIChatElements.messages.scrollTop = AIChatElements.messages.scrollHeight;
+}
+
+// 添加載入動畫
+function addLoadingMessage() {
+    if (!AIChatElements.messages) return null;
+
+    const messageDiv = document.createElement('div');
+    const id = 'loading-' + Date.now();
+    messageDiv.id = id;
+    messageDiv.className = 'chat-message ai-message';
+    messageDiv.innerHTML = `
+        <span class="message-avatar">🤖</span>
+        <div class="message-bubble loading">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    `;
+
+    AIChatElements.messages.appendChild(messageDiv);
+    AIChatElements.messages.scrollTop = AIChatElements.messages.scrollHeight;
+
+    return id;
+}
+
+// 移除訊息
+function removeMessage(id) {
+    const msg = document.getElementById(id);
+    if (msg) msg.remove();
+}
+
+// HTML 轉義（防止 XSS）
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
