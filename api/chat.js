@@ -1,5 +1,6 @@
 export default async function handler(req, res) {
     // 設置 CORS headers (針對 GitHub Pages)
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', 'https://penter405.github.io');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
