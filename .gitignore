@@ -31,3 +31,6 @@ red.txt
 # OS
 .DS_Store
 Thumbs.db
+
+#log
+logs_result.json
