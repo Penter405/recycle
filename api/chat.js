@@ -73,20 +73,20 @@ export default async function handler(req, res) {
 
         contents.push(currentUserPart);
 
-        // 4. 呼叫 Gemini 1.5 Flash API (加上 system_instruction)
+        // 4. 呼叫 Gemma 3 27B API (原生多模態，高額度)
         const geminiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    system_instruction: systemInstruction, // <--- 關鍵：放入系統指令
+                    system_instruction: systemInstruction, // 保留 System Instruction，Gemma 3 API 通常支援
                     contents,
                     generationConfig: {
-                        temperature: 0.8, // 提高一點隨機性，讓說話比較自然
-                        maxOutputTokens: 1000,
+                        temperature: 0.7, // Gemma 3 建議稍微降低溫度以保持穩定
+                        maxOutputTokens: 512, // User 建議 512
                     },
                     safetySettings: [
                         { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
