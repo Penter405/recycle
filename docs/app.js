@@ -723,7 +723,7 @@ async function sendMessage() {
 
     try {
         // 呼叫 API
-        const response = await fetch('/api/chat', {
+        const response = await fetch(CONFIG.API.CHAT_ENDPOINT, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
