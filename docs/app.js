@@ -756,8 +756,14 @@ async function sendMessage() {
             addMessageToChat('ai', data.reply);
 
             // 更新對話歷史
+            // 如果這則訊息有附帶圖片，在歷史紀錄中加上標記，讓 AI 在後續對話知道這張照片的存在
+            let historyContent = message;
+            if (shouldSendPhoto) {
+                historyContent += ' [系統資訊: 用戶在此訊息中上傳了照片]';
+            }
+
             AIChatState.conversationHistory.push(
-                { role: 'user', content: message },
+                { role: 'user', content: historyContent },
                 { role: 'assistant', content: data.reply }
             );
         }
