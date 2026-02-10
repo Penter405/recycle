@@ -108,7 +108,14 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         // OpenAI 格式的回傳解析
-        const reply = data.choices?.[0]?.message?.content || '抱歉，我無法回答這個問題。';
+        let reply = data.choices?.[0]?.message?.content || '抱歉，我無法回答這個問題。';
+
+        // 偵錯用：強制顯示模型資訊
+        if (data.model) {
+            reply += `\n\n(Debug: Served by ${data.model})`;
+        } else {
+            reply += `\n\n(Debug: Served by Unknown - Likely Gemini Gateway)`;
+        }
 
         // 回傳結果
         res.status(200).json({ reply });
