@@ -98,7 +98,7 @@ const CONFIG = {
 
     // ===== 版本資訊 =====
     VERSION: '1.0.0',
-    GITHUB_URL: 'https://github.com/your-username/your-repo'
+    GITHUB_URL: 'https://github.com/Penter405/recycle'
 };
 
 // 匯出設定 (for ES modules)

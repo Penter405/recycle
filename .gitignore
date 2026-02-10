@@ -1,3 +1,5 @@
+chat.txt
+
 # Python
 __pycache__/
 *.py[cod]
@@ -34,5 +36,3 @@ Thumbs.db
 
 #log
 logs_result.json
-
-chat.txt

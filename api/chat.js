@@ -18,78 +18,74 @@ export default async function handler(req, res) {
     try {
         const { message, image, conversationHistory, category } = req.body;
 
-        if (!message) {
-            return res.status(400).json({ error: 'Message is required' });
+        // 1. 定義「系統人格」 (這會讓它更像人類，而不是機器人)
+        const systemInstruction = {
+            role: "system",
+            parts: [{
+                text: `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
+            你的任務是協助用戶辨識回收物並提供精確的處置建議。
+            
+            運作準則：
+            1. 如果用戶上傳照片，請優先根據照片內容描述你看到了什麼，再結合分類建議進行回答。
+            2. 回答要自然、有溫暖，不要像機器人。可以使用 emoji。
+            3. 如果用戶問關於你的版本或開發者（Penter405），請誠實回答你是基於 Gemini 模型的 AI，由 Penter405 開發。
+            4. 對於回收建議，要具體（例如：這個要洗乾淨、那個要撕掉膠帶）。
+            5. 如果用戶問的問題跟回收無關，也要以友善的態度進行閒聊，但適時帶回環保主題。`
+            }]
+        };
+
+        // 2. 整理對話歷史 (確保順序：舊 -> 新)
+        let contents = [];
+        if (conversationHistory && conversationHistory.length > 0) {
+            contents = conversationHistory.slice(-10).map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
         }
 
-        // 取得 API Key
-        const apiKey = process.env.Gemini_API_Key;
-        if (!apiKey) {
-            console.error('[API] Gemini API Key not found');
-            return res.status(500).json({ error: 'API configuration error' });
-        }
-
-        // 建構提示詞
-        let systemPrompt = `你是一個專業的回收小助手。請用繁體中文回答用戶關於回收的問題。回答要簡潔、友善、實用。`;
-
+        // 3. 準備當前用戶的輸入 (文字 + 圖片 + 辨識到的分類)
+        let currentMessageText = message;
         if (category) {
-            systemPrompt += `\n\n目前辨識到的物品是：${category.name}（${category.description}）`;
+            currentMessageText = `[系統資訊: 影像辨識初步結果為 ${category.name}] \n用戶訊息: ${message}`;
         }
 
-        // 建構 Gemini API 請求內容
-        const contents = [];
+        const currentUserPart = {
+            role: "user",
+            parts: [{ text: currentMessageText }]
+        };
 
-        // 如果有圖片，將圖片加入第一個訊息
         if (image) {
-            // 移除 base64 前綴
+            // 解析 MIME Type (例如 data:image/png;base64,...)
+            const mimeMatch = image.match(/^data:(image\/\w+);base64,/);
+            const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+
             const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
 
-            contents.push({
-                role: 'user',
-                parts: [
-                    {
-                        inline_data: {
-                            mime_type: 'image/jpeg',
-                            data: base64Data
-                        }
-                    },
-                    {
-                        text: systemPrompt + '\n\n用戶問題：' + message
-                    }
-                ]
-            });
-        } else {
-            // 只有文字
-            contents.push({
-                role: 'user',
-                parts: [{ text: systemPrompt + '\n\n用戶問題：' + message }]
+            // 圖片必須放在文字之前
+            currentUserPart.parts.unshift({
+                inline_data: {
+                    mime_type: mimeType,
+                    data: base64Data
+                }
             });
         }
 
-        // 添加對話歷史（最多保留最近 5 輪對話）
-        if (conversationHistory && conversationHistory.length > 0) {
-            const recentHistory = conversationHistory.slice(-10); // 最多 10 則（5 輪）
-            for (const msg of recentHistory) {
-                contents.push({
-                    role: msg.role === 'assistant' ? 'model' : 'user',
-                    parts: [{ text: msg.content }]
-                });
-            }
-        }
+        contents.push(currentUserPart);
 
-        // 呼叫 Gemini 2.5 Flash API
+        // 4. 呼叫 Gemini 1.5 Flash API (加上 system_instruction)
         const geminiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
+                    system_instruction: systemInstruction, // <--- 關鍵：放入系統指令
                     contents,
                     generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 500,
+                        temperature: 0.8, // 提高一點隨機性，讓說話比較自然
+                        maxOutputTokens: 1000,
                     }
                 })
             }
@@ -107,6 +103,14 @@ export default async function handler(req, res) {
                 });
             }
 
+            // 處理 404 (Model Not Found)
+            if (geminiResponse.status === 404) {
+                return res.status(404).json({
+                    error: 'Model not found',
+                    message: 'AI 模型暫時無法使用，請通知管理員檢查模型名稱設定。'
+                });
+            }
+
             return res.status(500).json({ error: 'AI service error' });
         }
 
@@ -115,8 +119,6 @@ export default async function handler(req, res) {
 
         // 回傳結果
         res.status(200).json({ reply });
-
-    } catch (error) {
         console.error('[API] Error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
