@@ -73,9 +73,9 @@ export default async function handler(req, res) {
 
         contents.push(currentUserPart);
 
-        // 4. 呼叫 Gemini 2.0 Flash API (加上 system_instruction)
+        // 4. 呼叫 Gemini 1.5 Flash API (加上 system_instruction)
         const geminiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: {
@@ -87,7 +87,13 @@ export default async function handler(req, res) {
                     generationConfig: {
                         temperature: 0.8, // 提高一點隨機性，讓說話比較自然
                         maxOutputTokens: 1000,
-                    }
+                    },
+                    safetySettings: [
+                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
+                    ]
                 })
             }
         );
