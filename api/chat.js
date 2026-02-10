@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', 'https://penter405.github.io');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
     // 處理 OPTIONS 預檢請求
     if (req.method === 'OPTIONS') {
@@ -17,112 +17,98 @@ export default async function handler(req, res) {
 
     try {
         const { message, image, conversationHistory, category } = req.body;
+        const apiKey = process.env.Gemini_API_Key;
 
-        // 1. 定義「系統人格」 (這會讓它更像人類，而不是機器人)
-        const systemInstruction = {
+        // 2. 準備 OpenAI 格式的 messages
+        const messages = [];
+
+        // 加入系統提示 (System Instruction)
+        messages.push({
             role: "system",
-            parts: [{
-                text: `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
+            content: `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
             你的任務是協助用戶辨識回收物並提供精確的處置建議。
             
             運作準則：
             1. 如果用戶上傳照片，請優先根據照片內容描述你看到了什麼，再結合分類建議進行回答。
             2. 回答要自然、有溫暖，不要像機器人。可以使用 emoji。
-            3. 如果用戶問關於你的版本或開發者（Penter405），請誠實回答你是基於 Gemini 模型的 AI，由 Penter405 開發。
+            3. 如果用戶問關於你的版本或開發者（Penter405），請誠實回答你是基於 Gemma 3 模型的 AI，由 Penter405 開發。
             4. 對於回收建議，要具體（例如：這個要洗乾淨、那個要撕掉膠帶）。
             5. 如果用戶問的問題跟回收無關，也要以友善的態度進行閒聊，但適時帶回環保主題。
             6. 請隨時「記住」用戶上一次傳送的照片內容。當歷史訊息中出現 [系統資訊: 用戶在此訊息中上傳了照片] 時，代表該次對話有圖片。若用戶後續的提問（如「那這個呢？」、「要洗嗎？」）缺乏主詞，請務必基於當時你對該張照片的分析結果繼續回答，不要說「我無法回答」或「請上傳照片」。`
-            }]
-        };
+        });
 
-        // 2. 整理對話歷史 (確保順序：舊 -> 新)
-        let contents = [];
+        // 加入歷史紀錄
         if (conversationHistory && conversationHistory.length > 0) {
-            contents = conversationHistory.slice(-10).map(msg => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
-            }));
+            conversationHistory.slice(-10).forEach(msg => {
+                messages.push({
+                    role: msg.role === 'assistant' ? 'assistant' : 'user',
+                    content: msg.content
+                });
+            });
         }
 
-        // 3. 準備當前用戶的輸入 (文字 + 圖片 + 辨識到的分類)
+        // 準備當前用戶的輸入 (文字 + 圖片 + 辨識到的分類)
         let currentMessageText = message;
         if (category) {
             currentMessageText = `[系統資訊: 影像辨識初步結果為 ${category.name}] \n用戶訊息: ${message}`;
         }
 
-        const currentUserPart = {
-            role: "user",
-            parts: [{ text: currentMessageText }]
-        };
+        const userContent = [
+            { type: "text", text: currentMessageText }
+        ];
 
         if (image) {
             // 解析 MIME Type (例如 data:image/png;base64,...)
-            const mimeMatch = image.match(/^data:(image\/\w+);base64,/);
-            const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-
-            const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-
-            // 圖片必須放在文字之前
-            currentUserPart.parts.unshift({
-                inline_data: {
-                    mime_type: mimeType,
-                    data: base64Data
+            // 轉成 OpenAI 能懂的 image_url 格式 (支援 base64)
+            // image 變數本身就是完整的 data URI (包含 data:image/jpeg;base64,...)
+            userContent.push({
+                type: "image_url",
+                image_url: {
+                    url: image
                 }
             });
         }
 
-        contents.push(currentUserPart);
+        messages.push({
+            role: "user",
+            content: userContent
+        });
 
-        // 4. 呼叫 Gemma 3 27B API (原生多模態，高額度)
-        const geminiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b:generateContent?key=${apiKey}`,
+        // 3. 呼叫 Google 的 OpenAI 相容 Endpoint
+        // 使用 gemma-3-27b 模型
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
             {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}` // 注意：這裡改用 Bearer Token
                 },
                 body: JSON.stringify({
-                    system_instruction: systemInstruction, // 保留 System Instruction，Gemma 3 API 通常支援
-                    contents,
-                    generationConfig: {
-                        temperature: 0.7, // Gemma 3 建議稍微降低溫度以保持穩定
-                        maxOutputTokens: 512, // User 建議 512
-                    },
-                    safetySettings: [
-                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-                    ]
+                    model: "gemma-3-27b",
+                    messages: messages,
+                    max_tokens: 512,
+                    temperature: 0.7
                 })
             }
         );
 
-        if (!geminiResponse.ok) {
-            const errorData = await geminiResponse.json().catch(() => ({}));
-            console.error('[API] Gemini API error:', geminiResponse.status, errorData);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error('[API] OpenAI-Compat API error:', response.status, errorData);
 
-            // 處理 Rate Limit
-            if (geminiResponse.status === 429) {
+            if (response.status === 429) {
                 return res.status(429).json({
                     error: 'Rate limit exceeded',
                     message: '今日額度已用完'
                 });
             }
-
-            // 處理 404 (Model Not Found)
-            if (geminiResponse.status === 404) {
-                return res.status(404).json({
-                    error: 'Model not found',
-                    message: 'AI 模型暫時無法使用，請通知管理員檢查模型名稱設定。'
-                });
-            }
-
             return res.status(500).json({ error: 'AI service error' });
         }
 
-        const data = await geminiResponse.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || '抱歉，我無法回答這個問題。';
+        const data = await response.json();
+        // OpenAI 格式的回傳解析
+        const reply = data.choices?.[0]?.message?.content || '抱歉，我無法回答這個問題。';
 
         // 回傳結果
         res.status(200).json({ reply });
