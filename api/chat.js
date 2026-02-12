@@ -1,9 +1,11 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 export default async function handler(req, res) {
     // 設置 CORS headers (針對 GitHub Pages)
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Access-Control-Allow-Origin', 'https://penter405.github.io');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
     // 處理 OPTIONS 預檢請求
     if (req.method === 'OPTIONS') {
@@ -19,13 +21,11 @@ export default async function handler(req, res) {
         const { message, image, conversationHistory, category } = req.body;
         const apiKey = process.env.Gemini_API_Key;
 
-        // 準備 OpenAI 格式的 messages
-        const messages = [];
-
-        // 系統提示 (System Instruction)
-        messages.push({
-            role: "system",
-            content: `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
+        // ========== 使用 Native SDK 強制鎖定 Gemini 2 Flash ==========
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.0-flash",  // 強制指定，SDK 不會偷換模型
+            systemInstruction: `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
 你的任務是協助用戶辨識回收物並提供精確的處置建議。
 
 運作準則：
@@ -34,86 +34,67 @@ export default async function handler(req, res) {
 3. 如果用戶問關於你的版本或開發者（Penter405），請誠實回答你是基於 Gemini 模型的 AI，由 Penter405 開發。
 4. 對於回收建議，要具體（例如：這個要洗乾淨、那個要撕掉膠帶）。
 5. 如果用戶問的問題跟回收無關，也要以友善的態度進行閒聊，但適時帶回環保主題。
-6. 請隨時「記住」用戶上一次傳送的照片內容。當歷史訊息中出現 [系統資訊: 用戶在此訊息中上傳了照片] 時，代表該次對話有圖片。若用戶後續的提問（如「那這個呢？」、「要洗嗎？」）缺乏主詞，請務必基於當時你對該張照片的分析結果繼續回答，不要說「我無法回答」或「請上傳照片」。`
+6. 請隨時「記住」用戶上一次傳送的照片內容。當歷史訊息中出現 [系統資訊: 用戶在此訊息中上傳了照片] 時，代表該次對話有圖片。若用戶後續的提問（如「那這個呢？」、「要洗嗎？」）缺乏主詞，請務必基於當時你對該張照片的分析結果繼續回答，不要說「我無法回答」或「請上傳照片」。`,
+            generationConfig: {
+                temperature: 0.8,
+                maxOutputTokens: 1000,
+            },
         });
 
-        // 加入歷史紀錄
+        console.log('[API] 強制使用模型: gemini-2.0-flash (Native SDK)');
+
+        // 整理對話歷史
+        const history = [];
         if (conversationHistory && conversationHistory.length > 0) {
             conversationHistory.slice(-10).forEach(msg => {
-                messages.push({
-                    role: msg.role === 'assistant' ? 'assistant' : 'user',
-                    content: msg.content
+                history.push({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }]
                 });
             });
         }
 
-        // 準備當前用戶的輸入 (文字 + 圖片 + 辨識到的分類)
+        // 開啟聊天 session（帶歷史紀錄）
+        const chat = model.startChat({ history });
+
+        // 準備當前用戶的輸入
         let currentMessageText = message;
         if (category) {
             currentMessageText = `[系統資訊: 影像辨識初步結果為 ${category.name}] \n用戶訊息: ${message}`;
         }
 
-        const userContent = [
-            { type: "text", text: currentMessageText }
-        ];
+        // 組裝 parts（文字 + 圖片）
+        const parts = [];
 
         if (image) {
-            // image 變數本身就是完整的 data URI (包含 data:image/jpeg;base64,...)
-            userContent.push({
-                type: "image_url",
-                image_url: {
-                    url: image
+            // image 是完整的 data URI: data:image/jpeg;base64,xxxxx
+            const mimeMatch = image.match(/^data:(image\/\w+);base64,/);
+            const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+            const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+
+            // 圖片放在文字之前
+            parts.push({
+                inlineData: {
+                    mimeType: mimeType,
+                    data: base64Data
                 }
             });
         }
 
-        messages.push({
-            role: "user",
-            content: userContent
-        });
+        parts.push({ text: currentMessageText });
 
-        // 呼叫 Google OpenAI 相容 Endpoint — 使用 Gemini 2 Flash (1,500 RPD)
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: "gemini-2.0-flash",
-                    messages: messages,
-                    max_tokens: 1000,
-                    temperature: 0.8
-                })
-            }
-        );
+        // 發送訊息
+        const result = await chat.sendMessage(parts);
+        const response = result.response;
+        const reply = response.text() || '抱歉，我無法回答這個問題。';
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('[API] Error:', response.status, errorData);
+        console.log('[API] 回應成功，模型: gemini-2.0-flash');
 
-            if (response.status === 429) {
-                return res.status(429).json({
-                    error: 'Rate limit exceeded',
-                    message: '今日額度已用完'
-                });
-            }
-            return res.status(500).json({ error: 'AI service error' });
-        }
-
-        const data = await response.json();
-
-        // 偵錯：印出實際使用的模型
-        console.log('[API] 實際使用模型:', data.model);
-
-        const reply = data.choices?.[0]?.message?.content || '抱歉，我無法回答這個問題。';
-
+        // 回傳結果
         res.status(200).json({ reply });
 
     } catch (error) {
-        console.error('[API] Error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('[API] Error:', error.message || error);
+        res.status(500).json({ error: 'Internal server error', detail: error.message });
     }
 }
