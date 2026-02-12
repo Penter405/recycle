@@ -696,30 +696,44 @@ function captureCurrentPhoto() {
 }
 
 // 發送訊息
+// 發送訊息 (UI Entry Point)
 async function sendMessage() {
+    await sendToAI(0);
+}
+
+// 發送訊息到 AI (支援 429 Retry)
+async function sendToAI(retryCount = 0) {
     const message = AIChatElements.input?.value.trim();
-    if (!message || AIChatState.isProcessing) return;
 
-    // 清空輸入框
-    if (AIChatElements.input) AIChatElements.input.value = '';
+    // 如果是第一次呼叫，且無內容或正在處理中，則返回
+    if (retryCount === 0 && (!message || AIChatState.isProcessing)) return;
 
-    // 添加用戶訊息到聊天
-    addMessageToChat('user', message);
+    if (retryCount === 0) {
+        // 第一次發送：準備資料並清空 UI
+        if (AIChatElements.input) AIChatElements.input.value = '';
+        addMessageToChat('user', message);
 
-    // 檢查是否需要傳送圖片
-    const shouldSendPhoto = AIChatState.didMainSubmit;
-    const photoToSend = shouldSendPhoto ? AIChatState.currentPhoto : null;
+        const shouldSendPhoto = AIChatState.didMainSubmit;
+        const photoToSend = shouldSendPhoto ? AIChatState.currentPhoto : null;
+        if (shouldSendPhoto) AIChatState.didMainSubmit = false;
 
-    // 重置 didMainSubmit
-    if (shouldSendPhoto) {
-        AIChatState.didMainSubmit = false;
+        // 儲存當前請求資料供重試使用
+        AIChatState.lastRequest = {
+            message,
+            image: photoToSend,
+            conversationHistory: AIChatState.conversationHistory,
+            category: AppState.currentResult?.category
+        };
+
+        AIChatState.isProcessing = true;
+        AIChatElements.sendBtn?.setAttribute('disabled', 'true');
     }
 
-    // 顯示載入動畫
-    const loadingId = addLoadingMessage();
+    // 取得請求資料 (重試時從這裡拿)
+    const requestData = AIChatState.lastRequest;
+    if (!requestData) return;
 
-    AIChatState.isProcessing = true;
-    AIChatElements.sendBtn?.setAttribute('disabled', 'true');
+    const loadingId = addLoadingMessage();
 
     try {
         // 呼叫 API
@@ -729,10 +743,10 @@ async function sendMessage() {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                message,
-                image: photoToSend,
-                conversationHistory: AIChatState.conversationHistory,
-                category: AppState.currentResult?.category
+                message: requestData.message,
+                image: requestData.image,
+                conversationHistory: requestData.conversationHistory,
+                category: requestData.category
             })
         });
 
@@ -741,10 +755,26 @@ async function sendMessage() {
 
         if (!response.ok) {
             if (response.status === 429) {
-                // Rate Limit 錯誤
-                addMessageToChat('error', '今日 AI 額度已用完，請明天再試！😅');
+                // Rate Limit 錯誤處理
+                if (retryCount === 0) {
+                    console.log('[AI Chat] 遇到 429，等待 2 秒後重試...');
+                    addMessageToChat('error', '系統忙碌中，正在為您重試... ⏳');
+
+                    // 等待 2 秒
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    // 再次嘗試 (retryCount = 1)
+                    await sendToAI(1);
+                    return; // 結束這一次的執行
+                } else {
+                    // 重試後依然失敗
+                    addMessageToChat('error', '今日 AI 額度已用完，請明天再試！😅');
+                }
             } else {
-                throw new Error(`API Error: ${response.status}`);
+                // 嘗試讀取後端回傳的錯誤訊息
+                const errData = await response.json().catch(() => ({}));
+                const errMsg = errData.reply || `API Error: ${response.status}`;
+                addMessageToChat('error', errMsg);
             }
             return;
         }
@@ -756,9 +786,8 @@ async function sendMessage() {
             addMessageToChat('ai', data.reply);
 
             // 更新對話歷史
-            // 如果這則訊息有附帶圖片，在歷史紀錄中加上標記，讓 AI 在後續對話知道這張照片的存在
-            let historyContent = message;
-            if (shouldSendPhoto) {
+            let historyContent = requestData.message;
+            if (requestData.image) {
                 historyContent += ' [系統資訊: 用戶在此訊息中上傳了照片]';
             }
 
@@ -773,6 +802,12 @@ async function sendMessage() {
         removeMessage(loadingId);
         addMessageToChat('error', '發送失敗，請稍後再試。');
     } finally {
+        // 只有在非重試狀態 (retryCount 0 且沒進重試) 或 重試結束 (retryCount > 0) 時才恢復 UI
+        // 如果 retryCount === 0 且呼叫了 sendToAI(1)，那麼這裡會先被執行嗎？
+        // 不會，因為 await sendToAI(1) 會卡住，直到重試結束。
+        // 重試結束後，遞迴出來，這裡也會執行。
+        // 這樣會導致解鎖兩次 (內層一次，外層一次)，這是沒問題的。
+
         AIChatState.isProcessing = false;
         AIChatElements.sendBtn?.removeAttribute('disabled');
     }
@@ -796,15 +831,26 @@ function addMessageToChat(type, content) {
             <div class="message-bubble">${escapeHtml(content)}</div>
         `;
     } else if (type === 'ai') {
+        // 使用 marked.js 解析 Markdown
+        let htmlContent = content;
+        if (typeof marked !== 'undefined') {
+            try {
+                htmlContent = marked.parse(content);
+            } catch (e) {
+                console.error('Markdown parse error:', e);
+                htmlContent = escapeHtml(content);
+            }
+        } else {
+            htmlContent = escapeHtml(content);
+        }
+
         messageDiv.innerHTML = `
             <span class="message-avatar">🤖</span>
-            <div class="message-bubble">${escapeHtml(content)}</div>
+            <div class="message-bubble markdown-body">${htmlContent}</div>
         `;
     }
 
     AIChatElements.messages.appendChild(messageDiv);
-
-    // 滾動到底部
     AIChatElements.messages.scrollTop = AIChatElements.messages.scrollHeight;
 }
 
