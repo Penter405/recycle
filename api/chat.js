@@ -97,15 +97,13 @@ export default async function handler(req, res) {
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            console.error('[API] OpenRouter Error:', response.status, JSON.stringify(errorData));
+            const errorMsg = errorData?.error?.message || errorData?.error || JSON.stringify(errorData);
+            console.error('[API] OpenRouter Error:', response.status, errorMsg);
 
-            if (response.status === 429) {
-                return res.status(429).json({
-                    error: 'Rate limit exceeded',
-                    message: '額度已用完，請稍後再試'
-                });
-            }
-            return res.status(500).json({ error: 'AI service error', detail: errorData });
+            // 把錯誤訊息直接當作 reply 回傳，方便在聊天視窗看到
+            return res.status(200).json({
+                reply: `⚠️ AI 錯誤 (${response.status}): ${errorMsg}`
+            });
         }
 
         const data = await response.json();
@@ -117,6 +115,9 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('[API] Error:', error.message || error);
-        res.status(500).json({ error: 'Internal server error', detail: error.message });
+        // 同樣把錯誤當作 reply 回傳，方便除錯
+        res.status(200).json({
+            reply: `⚠️ 伺服器錯誤: ${error.message}`
+        });
     }
 }
