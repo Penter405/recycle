@@ -24,7 +24,7 @@ export default async function handler(req, res) {
         // ========== 使用 Native SDK 強制鎖定 Gemini 2 Flash ==========
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",  // 強制指定，SDK 不會偷換模型
+            model: "gemini-2.5-pro",  // 強制指定，SDK 不會偷換模型
             systemInstruction: `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
 你的任務是協助用戶辨識回收物並提供精確的處置建議。
 
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
             },
         });
 
-        console.log('[API] 強制使用模型: gemini-2.0-flash (Native SDK)');
+        console.log('[API] 強制使用模型: gemini-2.5-pro (Native SDK)');
 
         // 整理對話歷史
         const history = [];
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
         const response = result.response;
         const reply = response.text() || '抱歉，我無法回答這個問題。';
 
-        console.log('[API] 回應成功，模型: gemini-2.0-flash');
+        console.log('[API] 回應成功，模型: gemini-2.5-pro');
 
         // 回傳結果
         res.status(200).json({ reply });
