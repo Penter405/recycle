@@ -87,7 +87,7 @@ const CONFIG = {
     API: {
         // AI Chat API 端點 (Vercel Serverless Function)
         // 因為 GitHub Pages 是靜態託管，需指向 Vercel 域名
-        CHAT_ENDPOINT: 'https://recycle-kmtr8gjuu-penter405s-projects.vercel.app/api/chat',
+        CHAT_ENDPOINT: 'https://recycle-smoky.vercel.app/api/chat',
         // 是否啟用 AI 解說
         ENABLED: false,
         // AI 解說 API 端點 (Vercel Serverless Function)
