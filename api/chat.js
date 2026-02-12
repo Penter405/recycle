@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
         // 系統提示
         messages.push({
-            role: "system",
+            role: "user",
             content: `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
 你的任務是協助用戶辨識回收物並提供精確的處置建議。
 
