@@ -82,97 +82,47 @@ export default async function handler(req, res) {
             content: userContent
         });
 
-        // 定義可用模型清單 (優先順序)
-        const models = [
-            "google/gemma-3-27b-it:free",
-            "google/gemma-3-12b-it:free",
-            "nvidia/nemotron-nano-12b-v2-vl:free"
-        ];
+        // 呼叫 OpenRouter
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${apiKey}`,
+                "HTTP-Referer": "https://penter405.github.io", // Required by OpenRouter for free models
+                "X-Title": "SmartRecycle AI", // Optional
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "model": "google/gemma-3-27b-it:free",
+                "messages": messages,
+                "top_p": 1,
+                "temperature": 0.7,
+                "repetition_penalty": 1
+            })
+        });
 
-        let lastError = null;
-        let successParams = null; // 用於儲存成功的模型回應
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMsg = errorData?.error?.message || errorData?.error || JSON.stringify(errorData);
+            console.error('[API] OpenRouter Error:', response.status, errorMsg);
 
-        // 嘗試每個模型
-        for (let i = 0; i < models.length; i++) {
-            const model = models[i];
-            try {
-                console.log(`[API] Trying model: ${model}`); // 記錄嘗試的模型
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${apiKey}`,
-                        "HTTP-Referer": "https://penter405.github.io",
-                        "X-Title": "SmartRecycle AI",
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        "model": model,
-                        "messages": messages,
-                        "top_p": 1,
-                        "temperature": 0.7,
-                        "repetition_penalty": 1
-                    })
+            // 把錯誤訊息直接當作 reply 回傳，方便在聊天視窗看到
+            // 前端會根據 429 狀態碼做處理
+            if (response.status === 429) {
+                return res.status(429).json({
+                    error: 'Rate limit exceeded',
+                    reply: '⚠️ 模型忙碌中 (429 Rate Limit)，請稍候再試。'
                 });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    const errorMsg = errorData?.error?.message || errorData?.error || JSON.stringify(errorData);
-                    console.error(`[API] Error with ${model}:`, response.status, errorMsg);
-
-                    // 如果是 429，嘗試下一個模型
-                    if (response.status === 429) {
-                        // 移除：不要因為 free-limit 就停止，因為不同模型可能有不同的 Free Tier 額度
-                        // if (errorMsg.includes("free-models-per-day") || errorMsg.includes("credits")) { ... }
-
-                        lastError = { status: 429, message: errorMsg };
-
-                        // 如果還有下一個模型，則等待並重試
-                        if (i < models.length - 1) {
-                            const nextModel = models[i + 1];
-                            console.log(`[DEBUG] Changing model to "${nextModel}"... (waiting 2s)`);
-                            await new Promise(resolve => setTimeout(resolve, 2000));
-                            continue; // Try next model
-                        }
-                    }
-
-                    // 其他錯誤直接回傳
-                    return res.status(200).json({
-                        reply: `⚠️ AI 錯誤 (${response.status}): ${errorMsg}`
-                    });
-                }
-
-                const data = await response.json();
-                const reply = data.choices[0].message.content;
-
-                // 成功取得回應
-                res.status(200).json({ reply });
-                return; // 結束函式
-
-            } catch (error) {
-                console.error(`[API] Exception with ${model}:`, error);
-                lastError = { status: 500, message: error.message };
-
-                // 如果是 Exception，也嘗試下一個模型
-                if (i < models.length - 1) {
-                    const nextModel = models[i + 1];
-                    console.log(`[DEBUG] Changing model to "${nextModel}"... (waiting 2s due to exception)`);
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
             }
-        }
 
-        // 如果所有模型都失敗 (且最後一個也是 429 Rate Limit 或例外)
-        if (lastError && lastError.status === 429) {
-            return res.status(429).json({
-                error: 'Rate limit exceeded',
-                reply: '⚠️ 所有可用模型皆忙碌中 (429)，請稍候再試。'
+            return res.status(200).json({
+                reply: `⚠️ AI 錯誤 (${response.status}): ${errorMsg}`
             });
         }
 
-        // 其他情況 (所有模型都 crash 但不是 429?)
-        res.status(200).json({
-            reply: `⚠️ 系統繁忙，請稍後再試。 (All models failed: ${lastError?.message || 'Unknown'})`
-        });
+        const data = await response.json();
+        const reply = data.choices[0].message.content;
+
+        res.status(200).json({ reply });
 
     } catch (error) {
         console.error('[API] Server Error:', error);
