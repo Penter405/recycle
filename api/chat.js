@@ -121,12 +121,8 @@ export default async function handler(req, res) {
 
                     // 如果是 429，嘗試下一個模型
                     if (response.status === 429) {
-                        // 如果錯誤訊息包含 "free-models-per-day" 或 "credits"，則代表帳號限制，換模型也沒用
-                        if (errorMsg.includes("free-models-per-day") || errorMsg.includes("credits")) {
-                            console.error(`[API] Account limit reached with ${model}, aborting retry.`);
-                            lastError = { status: 429, message: errorMsg };
-                            break; // 停止嘗試其他模型
-                        }
+                        // 移除：不要因為 free-limit 就停止，因為不同模型可能有不同的 Free Tier 額度
+                        // if (errorMsg.includes("free-models-per-day") || errorMsg.includes("credits")) { ... }
 
                         lastError = { status: 429, message: errorMsg };
 
