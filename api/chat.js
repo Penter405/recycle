@@ -16,8 +16,7 @@ export default async function handler(req, res) {
 
     try {
         const { message, image, conversationHistory, category } = req.body;
-        const openRouterKey = process.env.OpenRouter_API_Key;
-        const geminiKey = process.env.Gemini_API_Key;
+        // API Keys 從 providers 陣列中讀取 (見下方)
 
         // ========== System Prompt ==========
         const systemPrompt = `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
@@ -39,33 +38,54 @@ export default async function handler(req, res) {
             currentMessageText = `[系統資訊: 影像辨識初步結果為 ${category.name}] \n用戶訊息: ${message}`;
         }
 
-        // ========== 1. 先嘗試 OpenRouter ==========
-        console.log('[API] Trying OpenRouter (google/gemma-3-27b-it:free)...');
-        const orReply = await tryOpenRouter(openRouterKey, systemPrompt, currentMessageText, image, conversationHistory);
+        // ========== 定義所有可用的 API Key (優先順序) ==========
+        const providers = [
+            // OpenRouter keys
+            { type: 'openrouter', key: process.env.OpenRouter_API_Key, label: 'OR(default)' },
+            { type: 'openrouter', key: process.env.OpenRouter_API_Key_1, label: 'OR(1)' },
+            { type: 'openrouter', key: process.env.OpenRouter_API_Key_3, label: 'OR(3)' },
+            { type: 'openrouter', key: process.env.OpenRouter_API_Key_4, label: 'OR(4)' },
+            // Google Gemini keys
+            { type: 'gemini', key: process.env.Gemini_API_Key, label: 'Gemini(default)' },
+            { type: 'gemini', key: process.env.Gemini_API_Key_1, label: 'Gemini(1)' },
+        ].filter(p => p.key); // 過濾掉沒有設定的 key
 
-        if (orReply.success) {
-            return res.status(200).json({ reply: orReply.reply });
+        let lastReply = null;
+
+        for (let i = 0; i < providers.length; i++) {
+            const provider = providers[i];
+            console.log(`[API] Trying ${provider.label}...`);
+
+            let result;
+            if (provider.type === 'openrouter') {
+                result = await tryOpenRouter(provider.key, systemPrompt, currentMessageText, image, conversationHistory);
+            } else {
+                result = await tryGemini(provider.key, systemPrompt, currentMessageText, image, conversationHistory);
+            }
+
+            // 成功 → 直接回傳
+            if (result.success) {
+                return res.status(200).json({ reply: result.reply });
+            }
+
+            lastReply = result.reply;
+
+            // 如果不是 429，直接回傳錯誤（不需要換 key）
+            if (!result.is429) {
+                return res.status(200).json({ reply: result.reply });
+            }
+
+            // 429 → 嘗試下一個 provider
+            if (i < providers.length - 1) {
+                const next = providers[i + 1];
+                console.log(`[DEBUG] Changing to ${next.label}... (waiting 2s)`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
         }
 
-        // 如果 OpenRouter 不是 429，直接回傳錯誤
-        if (!orReply.is429) {
-            return res.status(200).json({ reply: orReply.reply });
-        }
-
-        // ========== 2. OpenRouter 429 → 等 2 秒 → 嘗試 Google Gemini ==========
-        console.log('[DEBUG] Changing provider to Google Gemini... (waiting 2s)');
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        console.log('[API] Trying Google Gemini (gemini-2.0-flash)...');
-        const geminiReply = await tryGemini(geminiKey, systemPrompt, currentMessageText, image, conversationHistory);
-
-        if (geminiReply.success) {
-            return res.status(200).json({ reply: geminiReply.reply });
-        }
-
-        // ========== 3. 兩個都失敗 ==========
+        // 所有 provider 都失敗
         return res.status(200).json({
-            reply: geminiReply.reply || '⚠️ 所有 AI 服務皆不可用，請稍後再試。'
+            reply: lastReply || '⚠️ 所有 AI 服務皆不可用，請稍後再試。'
         });
 
     } catch (error) {
@@ -202,7 +222,8 @@ async function tryGemini(apiKey, systemPrompt, userMessage, image, conversationH
             const errorData = await response.json().catch(() => ({}));
             const errorMsg = errorData?.error?.message || JSON.stringify(errorData);
             console.error('[API] Gemini Error:', response.status, errorMsg);
-            return { success: false, reply: `⚠️ Gemini 錯誤 (${response.status}): ${errorMsg}` };
+            const is429 = response.status === 429;
+            return { success: false, is429, reply: `⚠️ Gemini 錯誤 (${response.status}): ${errorMsg}` };
         }
 
         const data = await response.json();
@@ -210,13 +231,13 @@ async function tryGemini(apiKey, systemPrompt, userMessage, image, conversationH
 
         if (!reply) {
             console.error('[API] Gemini: No reply in response', JSON.stringify(data));
-            return { success: false, reply: '⚠️ Gemini 回傳了空的回應。' };
+            return { success: false, is429: false, reply: '⚠️ Gemini 回傳了空的回應。' };
         }
 
         return { success: true, reply };
 
     } catch (error) {
         console.error('[API] Gemini Exception:', error);
-        return { success: false, reply: `⚠️ Gemini 連線失敗: ${error.message}` };
+        return { success: false, is429: false, reply: `⚠️ Gemini 連線失敗: ${error.message}` };
     }
 }
