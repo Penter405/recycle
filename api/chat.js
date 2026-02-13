@@ -85,8 +85,8 @@ export default async function handler(req, res) {
         // 定義可用模型清單 (優先順序)
         const models = [
             "google/gemma-3-27b-it:free",
-            "google/gemma-2-9b-it:free",
-            "meta-llama/llama-3.1-8b-instruct:free"
+            "google/gemma-3-12b-it:free",
+            "nvidia/nemotron-nano-12b-v2-vl:free"
         ];
 
         let lastError = null;
