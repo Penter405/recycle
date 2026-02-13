@@ -757,11 +757,11 @@ async function sendToAI(retryCount = 0) {
             if (response.status === 429) {
                 // Rate Limit 錯誤處理
                 if (retryCount === 0) {
-                    console.log('[AI Chat] 遇到 429，等待 2 秒後重試...');
-                    addMessageToChat('error', '系統忙碌中，正在為您重試... ⏳');
+                    console.log('[AI Chat] 遇到 429，等待 4 秒後重試...');
+                    addMessageToChat('error', '系統忙碌中，正在為您切換線路重試... ⏳');
 
-                    // 等待 2 秒
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // 等待 4 秒
+                    await new Promise(resolve => setTimeout(resolve, 4000));
 
                     // 再次嘗試 (retryCount = 1)
                     await sendToAI(1);
