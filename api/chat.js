@@ -16,13 +16,10 @@ export default async function handler(req, res) {
 
     try {
         const { message, image, conversationHistory, category } = req.body;
-        const apiKey = process.env.OpenRouter_API_Key;
+        const openRouterKey = process.env.OpenRouter_API_Key;
+        const geminiKey = process.env.Gemini_API_Key;
 
-        // ========== 使用 OpenRouter API 呼叫 Gemma 3 27B IT (Free) ==========
-        const messages = [];
-
-        // 系統提示
-        // 注意：Gemma 3 on OpenRouter 不支援 "system" role，所以我們把它放在第一個 user message
+        // ========== System Prompt ==========
         const systemPrompt = `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
 你的任務是協助用戶辨識回收物並提供精確的處置建議。
 
@@ -36,24 +33,59 @@ export default async function handler(req, res) {
 7. **你可以使用 Markdown 語法**來讓回答更清晰易讀（例如：使用條列點、粗體強調重點、或程式碼區塊）。
 8. **如果照片模糊不清或無法辨識**，請禮貌地告知用戶照片不清楚，並請他們重新拍攝更清晰的照片，或嘗試從不同角度拍攝。請不要胡亂猜測。`;
 
-        // 準備當前用戶的輸入
+        // ========== 準備用戶輸入 ==========
         let currentMessageText = message;
         if (category) {
             currentMessageText = `[系統資訊: 影像辨識初步結果為 ${category.name}] \n用戶訊息: ${message}`;
         }
 
-        // 組合第一個 User Message (包含 System Prompt)
-        // 如果有歷史紀錄，我們需要把 System Prompt 放在最前面
-        // 這裡的邏輯是：每次請求都把 System Prompt 放在第一個訊息的開頭，或者作為獨立的第一個 user message
+        // ========== 1. 先嘗試 OpenRouter ==========
+        console.log('[API] Trying OpenRouter (google/gemma-3-27b-it:free)...');
+        const orReply = await tryOpenRouter(openRouterKey, systemPrompt, currentMessageText, image, conversationHistory);
 
-        // 策略：重組 messages 陣列
-        // 1. 第一則訊息固定是 User Role，包含 System Prompt
-        messages.push({
-            role: "user",
-            content: systemPrompt
+        if (orReply.success) {
+            return res.status(200).json({ reply: orReply.reply });
+        }
+
+        // 如果 OpenRouter 不是 429，直接回傳錯誤
+        if (!orReply.is429) {
+            return res.status(200).json({ reply: orReply.reply });
+        }
+
+        // ========== 2. OpenRouter 429 → 等 2 秒 → 嘗試 Google Gemini ==========
+        console.log('[DEBUG] Changing provider to Google Gemini... (waiting 2s)');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        console.log('[API] Trying Google Gemini (gemini-2.0-flash)...');
+        const geminiReply = await tryGemini(geminiKey, systemPrompt, currentMessageText, image, conversationHistory);
+
+        if (geminiReply.success) {
+            return res.status(200).json({ reply: geminiReply.reply });
+        }
+
+        // ========== 3. 兩個都失敗 ==========
+        return res.status(200).json({
+            reply: geminiReply.reply || '⚠️ 所有 AI 服務皆不可用，請稍後再試。'
         });
 
-        // 2. 插入歷史紀錄 (最多 10 則)
+    } catch (error) {
+        console.error('[API] Server Error:', error);
+        res.status(200).json({
+            reply: `⚠️ 伺服器錯誤: ${error.message}`
+        });
+    }
+}
+
+// ========== OpenRouter 呼叫 ==========
+async function tryOpenRouter(apiKey, systemPrompt, userMessage, image, conversationHistory) {
+    try {
+        // 組裝 OpenRouter messages 格式
+        const messages = [];
+
+        // Gemma 3 不支援 system role，放在第一個 user message
+        messages.push({ role: "user", content: systemPrompt });
+
+        // 歷史紀錄 (最多 10 則)
         if (conversationHistory && conversationHistory.length > 0) {
             conversationHistory.slice(-10).forEach(msg => {
                 messages.push({
@@ -63,32 +95,22 @@ export default async function handler(req, res) {
             });
         }
 
-        // 3. 插入當前 user message (包含圖片)
-        const userContent = [
-            { type: "text", text: currentMessageText }
-        ];
-
+        // 當前 user message (含圖片)
+        const userContent = [{ type: "text", text: userMessage }];
         if (image) {
             userContent.push({
                 type: "image_url",
-                image_url: {
-                    url: image // 已經是 data:image/jpeg;base64,...
-                }
+                image_url: { url: image }
             });
         }
+        messages.push({ role: "user", content: userContent });
 
-        messages.push({
-            role: "user",
-            content: userContent
-        });
-
-        // 呼叫 OpenRouter
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${apiKey}`,
-                "HTTP-Referer": "https://penter405.github.io", // Required by OpenRouter for free models
-                "X-Title": "SmartRecycle AI", // Optional
+                "HTTP-Referer": "https://penter405.github.io",
+                "X-Title": "SmartRecycle AI",
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
@@ -105,29 +127,96 @@ export default async function handler(req, res) {
             const errorMsg = errorData?.error?.message || errorData?.error || JSON.stringify(errorData);
             console.error('[API] OpenRouter Error:', response.status, errorMsg);
 
-            // 把錯誤訊息直接當作 reply 回傳，方便在聊天視窗看到
-            // 前端會根據 429 狀態碼做處理
             if (response.status === 429) {
-                return res.status(429).json({
-                    error: 'Rate limit exceeded',
-                    reply: '⚠️ 模型忙碌中 (429 Rate Limit)，請稍候再試。'
-                });
+                return { success: false, is429: true, reply: `⚠️ OpenRouter 忙碌中 (429)` };
             }
-
-            return res.status(200).json({
-                reply: `⚠️ AI 錯誤 (${response.status}): ${errorMsg}`
-            });
+            return { success: false, is429: false, reply: `⚠️ AI 錯誤 (${response.status}): ${errorMsg}` };
         }
 
         const data = await response.json();
         const reply = data.choices[0].message.content;
-
-        res.status(200).json({ reply });
+        return { success: true, reply };
 
     } catch (error) {
-        console.error('[API] Server Error:', error);
-        res.status(200).json({
-            reply: `⚠️ 伺服器錯誤: ${error.message}`
-        });
+        console.error('[API] OpenRouter Exception:', error);
+        return { success: false, is429: false, reply: `⚠️ OpenRouter 連線失敗: ${error.message}` };
+    }
+}
+
+// ========== Google Gemini 呼叫 ==========
+async function tryGemini(apiKey, systemPrompt, userMessage, image, conversationHistory) {
+    try {
+        // 組裝 Gemini contents 格式
+        const contents = [];
+
+        // 歷史紀錄 (最多 10 則)
+        if (conversationHistory && conversationHistory.length > 0) {
+            conversationHistory.slice(-10).forEach(msg => {
+                contents.push({
+                    role: msg.role === 'assistant' ? 'model' : 'user',
+                    parts: [{ text: msg.content }]
+                });
+            });
+        }
+
+        // 當前 user message
+        const parts = [{ text: userMessage }];
+
+        // 圖片處理：Gemini 使用 inlineData 格式
+        if (image) {
+            // image 格式是 "data:image/jpeg;base64,xxxxx"
+            const match = image.match(/^data:(.+?);base64,(.+)$/);
+            if (match) {
+                parts.push({
+                    inlineData: {
+                        mimeType: match[1],
+                        data: match[2]
+                    }
+                });
+            }
+        }
+        contents.push({ role: "user", parts });
+
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": apiKey
+                },
+                body: JSON.stringify({
+                    system_instruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                    contents: contents,
+                    generationConfig: {
+                        temperature: 0.7,
+                        topP: 1
+                    }
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMsg = errorData?.error?.message || JSON.stringify(errorData);
+            console.error('[API] Gemini Error:', response.status, errorMsg);
+            return { success: false, reply: `⚠️ Gemini 錯誤 (${response.status}): ${errorMsg}` };
+        }
+
+        const data = await response.json();
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!reply) {
+            console.error('[API] Gemini: No reply in response', JSON.stringify(data));
+            return { success: false, reply: '⚠️ Gemini 回傳了空的回應。' };
+        }
+
+        return { success: true, reply };
+
+    } catch (error) {
+        console.error('[API] Gemini Exception:', error);
+        return { success: false, reply: `⚠️ Gemini 連線失敗: ${error.message}` };
     }
 }
