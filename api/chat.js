@@ -40,14 +40,16 @@ export default async function handler(req, res) {
 
         // ========== 定義所有可用的 API Key (優先順序) ==========
         const providers = [
+            // Google Gemini keys (優先)
+            { type: 'gemini', key: process.env.Gemini_API_Key, label: 'Gemini(default)' },
+            { type: 'gemini', key: process.env.Gemini_API_Key_1, label: 'Gemini(1)' },
+            { type: 'gemini', key: process.env.Gemini_API_Key_3, label: 'Gemini(3)' },
+            { type: 'gemini', key: process.env.Gemini_API_Key_4, label: 'Gemini(4)' },
             // OpenRouter keys
             { type: 'openrouter', key: process.env.OpenRouter_API_Key, label: 'OR(default)' },
             { type: 'openrouter', key: process.env.OpenRouter_API_Key_1, label: 'OR(1)' },
             { type: 'openrouter', key: process.env.OpenRouter_API_Key_3, label: 'OR(3)' },
             { type: 'openrouter', key: process.env.OpenRouter_API_Key_4, label: 'OR(4)' },
-            // Google Gemini keys
-            { type: 'gemini', key: process.env.Gemini_API_Key, label: 'Gemini(default)' },
-            { type: 'gemini', key: process.env.Gemini_API_Key_1, label: 'Gemini(1)' },
         ].filter(p => p.key); // 過濾掉沒有設定的 key
 
         let lastReply = null;
