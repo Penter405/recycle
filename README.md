@@ -78,5 +78,6 @@ python -m http.server 8000
 ## 🙏 致謝
 
 - [TrashNet](https://github.com/garythung/trashnet) - 訓練資料來源
-- [TensorFlow.js](https://www.tensorflow.org/js) - 瀏覽器端機器學習
-- [MobileNetV2](https://arxiv.org/abs/1801.04381) - 基礎模型架構
+- [TeachableMachine](https://teachablemachine.withgoogle.com/) - 模型訓練工具
+- [TensorFlow.js](https://www.tensorflow.org/js) - 瀏覽器端機器學習(not using ,beacuse too tried)
+- [MobileNetV2](https://arxiv.org/abs/1801.04381) - 基礎模型架構(not using ,beacuse too tried)
