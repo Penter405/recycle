@@ -67,17 +67,18 @@ python -m http.server 8000
 ## 📖 開發文件
 
 詳細的開發說明與技術細節請參考 [DEVELOP.md](https://github.com/Penter405/recycle/blob/main/DEVELOP.md)
-
+<!--
 ## 📈 模型效能
 
 - **準確率**: ~93%
 - **模型大小**: ~10MB
 - **推論速度**: <500ms (視裝置而定)
-
+-->
 
 ## 🙏 致謝
 
 - [TrashNet](https://github.com/garythung/trashnet) - 訓練資料來源
 - [TeachableMachine](https://teachablemachine.withgoogle.com/) - 模型訓練工具
-- [TensorFlow.js](https://www.tensorflow.org/js) - 瀏覽器端機器學習(not using ,beacuse too tried)
+<!--- [TensorFlow.js](https://www.tensorflow.org/js) - 瀏覽器端機器學習(not using ,beacuse too tried)
 - [MobileNetV2](https://arxiv.org/abs/1801.04381) - 基礎模型架構(not using ,beacuse too tried)
+-->
