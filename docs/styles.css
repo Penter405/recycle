@@ -189,6 +189,41 @@ body {
     font-size: 18px;
 }
 
+/* Legal Links in Menu */
+.menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 8px 0;
+}
+
+.menu-legal {
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.legal-text {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.legal-links {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.legal-links a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.legal-links a:hover {
+    text-decoration: underline;
+}
+
 /* Toggle Switch */
 .toggle-item {
     display: flex;
