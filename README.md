@@ -28,6 +28,10 @@
 
 開啟 [GitHub Pages 連結](https://penter405.github.io/recycle/) 即可使用（需允許相機權限）
 
+### 問卷調查
+
+[問卷連結](https://penter405.github.io/recycle/questionnaire.html)
+
 ### 本地執行
 
 ```bash
