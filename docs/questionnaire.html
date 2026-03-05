@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>垃圾分類問卷</title>
+</head>
+<body>
+
+<h2>垃圾分類問卷</h2>
+
+<form id="survey">
+
+年齡:
+<input type="number" name="age"><br><br>
+
+性別:
+<select name="gender">
+<option value="male">男</option>
+<option value="female">女</option>
+<option value="other">其他</option>
+</select><br><br>
+
+2. 是否有時會對垃圾分類有困擾？
+<select name="confused">
+<option value="yes">是</option>
+<option value="no">否</option>
+</select><br><br>
+
+3. 對垃圾分類自我評估 (1-5)
+<input type="number" name="selfScore" min="1" max="5"><br><br>
+
+4. 不知道怎麼分類時會怎麼做？
+<select name="action">
+<option>直接丟一般垃圾</option>
+<option>看包裝標誌</option>
+<option>手機查詢</option>
+</select><br><br>
+
+5. 鉛筆盒在一般垃圾桶中是否正確？
+<select name="pencilCase">
+<option>正確</option>
+<option>不正確</option>
+</select><br><br>
+
+6. 是否願意為垃圾分類盡一份心力
+<select name="willing">
+<option>願意</option>
+<option>不願意</option>
+</select><br><br>
+
+7. 用手機辨識垃圾是否更方便 (1-5)
+<input type="number" name="phoneConvenience" min="1" max="5"><br><br>
+
+8. 垃圾辨識是否增加分類意願
+<select name="increaseWilling">
+<option>會</option>
+<option>不會</option>
+</select><br><br>
+
+9. 了解產品後請評分 (1-10)
+<input type="number" name="productScore" min="1" max="10"><br><br>
+
+10. 是否會推薦給其他人 (1-10)
+<input type="number" name="recommend" min="1" max="10"><br><br>
+
+<button type="submit">送出</button>
+
+</form>
+
+<script>
+
+document.getElementById("survey").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const form = new FormData(e.target);
+
+    const data = Object.fromEntries(form.entries());
+
+    await fetch("/api/survey", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+    });
+
+    alert("已送出");
+}
+
+</script>
+
+</body>
+</html>
