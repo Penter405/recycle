@@ -1,93 +1,495 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>垃圾分類問卷</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garbage Classification Questionnaire</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --primary-hover: #45a049;
+            --bg-color: #f9fafb;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .lang-btn {
+            background: none;
+            border: 1px solid var(--border-color);
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: all 0.2s;
+        }
+
+        .lang-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .lang-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        h3 {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-top: 30px;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label.question-title {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-top: 8px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .radio-option input[type="radio"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        button.submit-btn {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+
+        button.submit-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        button.submit-btn:disabled {
+            background-color: #a5d6a7;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #c8e6c9;
+        }
+
+        .error {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ffcdd2;
+        }
+    </style>
 </head>
+
 <body>
 
-<h2>垃圾分類問卷</h2>
+    <div class="container">
+        <div class="lang-switcher">
+            <button type="button" class="lang-btn active" id="btn-en" onclick="setLanguage('en')">English</button>
+            <button type="button" class="lang-btn" id="btn-zh" onclick="setLanguage('zh')">繁體中文</button>
+        </div>
 
-<form id="survey">
+        <h2 data-i18n="title">Garbage Classification & Recognition Product Questionnaire</h2>
 
-年齡:
-<input type="number" name="age"><br><br>
+        <form id="surveyForm">
+            <h3 data-i18n="section-basic">Basic Information</h3>
 
-性別:
-<select name="gender">
-<option value="male">男</option>
-<option value="female">女</option>
-<option value="other">其他</option>
-</select><br><br>
+            <div class="form-group">
+                <label class="question-title" for="age" data-i18n="age-label">Age</label>
+                <input type="number" id="age" name="age" min="1" max="120" placeholder="Enter your age" required
+                    data-i18n-attr="placeholder:age-placeholder">
+            </div>
 
-2. 是否有時會對垃圾分類有困擾？
-<select name="confused">
-<option value="yes">是</option>
-<option value="no">否</option>
-</select><br><br>
+            <div class="form-group">
+                <label class="question-title" for="gender" data-i18n="gender-label">Gender</label>
+                <select id="gender" name="gender" required>
+                    <option value="" disabled selected data-i18n="gender-select">Select your gender...</option>
+                    <option value="male" data-i18n="gender-male">Male</option>
+                    <option value="female" data-i18n="gender-female">Female</option>
+                    <option value="other" data-i18n="gender-other">Other</option>
+                </select>
+            </div>
 
-3. 對垃圾分類自我評估 (1-5)
-<input type="number" name="selfScore" min="1" max="5"><br><br>
+            <h3 data-i18n="section-questions">Questions</h3>
 
-4. 不知道怎麼分類時會怎麼做？
-<select name="action">
-<option>直接丟一般垃圾</option>
-<option>看包裝標誌</option>
-<option>手機查詢</option>
-</select><br><br>
+            <div class="form-group">
+                <label class="question-title" data-i18n="q1">1. Do you sometimes feel confused about garbage
+                    classification?</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="confused" value="yes" required> <span data-i18n="yes">Yes</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="confused" value="no"> <span data-i18n="no">No</span>
+                    </label>
+                </div>
+            </div>
 
-5. 鉛筆盒在一般垃圾桶中是否正確？
-<select name="pencilCase">
-<option>正確</option>
-<option>不正確</option>
-</select><br><br>
+            <div class="form-group">
+                <label class="question-title" for="self_eval" data-i18n="q2">2. Self-evaluation of garbage
+                    classification
+                    ability (1-5 score)</label>
+                <input type="number" id="self_eval" name="self_eval" min="1" max="5" placeholder="1 (Low) to 5 (High)"
+                    required data-i18n-attr="placeholder:q2-placeholder">
+            </div>
 
-6. 是否願意為垃圾分類盡一份心力
-<select name="willing">
-<option>願意</option>
-<option>不願意</option>
-</select><br><br>
+            <div class="form-group">
+                <label class="question-title" for="action_unknown" data-i18n="q3">3. When you do not know how to
+                    classify
+                    garbage, what do you do?</label>
+                <select id="action_unknown" name="action_unknown" required>
+                    <option value="" disabled selected data-i18n="q3-select">Select an option...</option>
+                    <option value="Throw into general trash" data-i18n="q3-opt1">Throw into general trash</option>
+                    <option value="Check the package label" data-i18n="q3-opt2">Check the package label</option>
+                    <option value="Search with phone" data-i18n="q3-opt3">Search with phone</option>
+                </select>
+            </div>
 
-7. 用手機辨識垃圾是否更方便 (1-5)
-<input type="number" name="phoneConvenience" min="1" max="5"><br><br>
+            <div class="form-group">
+                <label class="question-title" data-i18n="q4">4. If a pencil case is thrown into the general trash bin,
+                    is it
+                    correct?</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="pencil_case_correct" value="correct" required> <span
+                            data-i18n="correct">Correct</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="pencil_case_correct" value="incorrect"> <span
+                            data-i18n="incorrect">Incorrect</span>
+                    </label>
+                </div>
+            </div>
 
-8. 垃圾辨識是否增加分類意願
-<select name="increaseWilling">
-<option>會</option>
-<option>不會</option>
-</select><br><br>
+            <div class="form-group">
+                <label class="question-title" data-i18n="q5">5. Are you willing to contribute to garbage
+                    classification?</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="willing_to_contribute" value="yes" required> <span
+                            data-i18n="yes">Yes</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="willing_to_contribute" value="no"> <span data-i18n="no">No</span>
+                    </label>
+                </div>
+            </div>
 
-9. 了解產品後請評分 (1-10)
-<input type="number" name="productScore" min="1" max="10"><br><br>
+            <div class="form-group">
+                <label class="question-title" for="phone_makes_easier" data-i18n="q6">6. Would using a phone to identify
+                    garbage make classification easier? (1-5 score)</label>
+                <input type="number" id="phone_makes_easier" name="phone_makes_easier" min="1" max="5"
+                    placeholder="1 (No) to 5 (Absolutely)" required data-i18n-attr="placeholder:q6-placeholder">
+            </div>
 
-10. 是否會推薦給其他人 (1-10)
-<input type="number" name="recommend" min="1" max="10"><br><br>
+            <div class="form-group">
+                <label class="question-title" data-i18n="q7">7. Would garbage recognition technology increase your
+                    willingness to classify garbage?</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="increase_willingness_tech" value="yes" required> <span
+                            data-i18n="yes">Yes</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="increase_willingness_tech" value="no"> <span data-i18n="no">No</span>
+                    </label>
+                </div>
+            </div>
 
-<button type="submit">送出</button>
+            <h3 data-i18n="section-product">Product Section</h3>
+            <p style="color: var(--text-muted); font-style: italic; margin-bottom: 20px;" data-i18n="product-intro">
+                Imagine you have just learned about our innovative garbage recognition tool that automatically scans and
+                identifies waste.
+            </p>
 
-</form>
+            <div class="form-group">
+                <label class="question-title" for="product_rating" data-i18n="q8">8. Please rate our product
+                    (1-10)</label>
+                <input type="number" id="product_rating" name="product_rating" min="1" max="10"
+                    placeholder="1 (Poor) to 10 (Excellent)" required data-i18n-attr="placeholder:q8-placeholder">
+            </div>
 
-<script>
+            <div class="form-group">
+                <label class="question-title" for="recommend_product" data-i18n="q9">9. Would you recommend this product
+                    to
+                    others? (1-10)</label>
+                <input type="number" id="recommend_product" name="recommend_product" min="1" max="10"
+                    placeholder="1 (Never) to 10 (Definitely)" required data-i18n-attr="placeholder:q9-placeholder">
+            </div>
 
-document.getElementById("survey").onsubmit = async (e) => {
-    e.preventDefault();
+            <button type="submit" class="submit-btn" id="submitBtn" data-i18n="submit-btn">Submit Questionnaire</button>
+        </form>
 
-    const form = new FormData(e.target);
+        <div id="message"></div>
+    </div>
 
-    const data = Object.fromEntries(form.entries());
+    <script>
+        const translations = {
+            en: {
+                title: "Garbage Classification & Recognition Product Questionnaire",
+                "section-basic": "Basic Information",
+                "age-label": "Age",
+                "age-placeholder": "Enter your age",
+                "gender-label": "Gender",
+                "gender-select": "Select your gender...",
+                "gender-male": "Male",
+                "gender-female": "Female",
+                "gender-other": "Other",
+                "section-questions": "Questions",
+                q1: "1. Do you sometimes feel confused about garbage classification?",
+                q2: "2. Self-evaluation of garbage classification ability (1-5 score)",
+                "q2-placeholder": "1 (Low) to 5 (High)",
+                q3: "3. When you do not know how to classify garbage, what do you do?",
+                "q3-select": "Select an option...",
+                "q3-opt1": "Throw into general trash",
+                "q3-opt2": "Check the package label",
+                "q3-opt3": "Search with phone",
+                q4: "4. If a pencil case is thrown into the general trash bin, is it correct?",
+                q5: "5. Are you willing to contribute to garbage classification?",
+                q6: "6. Would using a phone to identify garbage make classification easier? (1-5 score)",
+                "q6-placeholder": "1 (No) to 5 (Absolutely)",
+                q7: "7. Would garbage recognition technology increase your willingness to classify garbage?",
+                "section-product": "Product Section",
+                "product-intro": "Imagine you have just learned about our innovative garbage recognition tool that automatically scans and identifies waste.",
+                q8: "8. Please rate our product (1-10)",
+                "q8-placeholder": "1 (Poor) to 10 (Excellent)",
+                q9: "9. Would you recommend this product to others? (1-10)",
+                "q9-placeholder": "1 (Never) to 10 (Definitely)",
+                "submit-btn": "Submit Questionnaire",
+                yes: "Yes",
+                no: "No",
+                correct: "Correct",
+                incorrect: "Incorrect",
+                submitting: "Submitting...",
+                success: "Submission successful",
+                failure: "Submission failed. Please check the network or API endpoint and try again."
+            },
+            zh: {
+                title: "垃圾分類與識別產品問卷",
+                "section-basic": "基本資料",
+                "age-label": "年齡",
+                "age-placeholder": "請輸入年齡",
+                "gender-label": "性別",
+                "gender-select": "請選擇性別...",
+                "gender-male": "男",
+                "gender-female": "女",
+                "gender-other": "其他",
+                "section-questions": "調查問題",
+                q1: "1. 您是否偶爾會對垃圾分類感到困惑？",
+                q2: "2. 垃圾分類能力自我評估 (1-5分)",
+                "q2-placeholder": "1 (低) 到 5 (高)",
+                q3: "3. 當您不知道如何分類垃圾時，您會怎麼做？",
+                "q3-select": "請選擇一個選項...",
+                "q3-opt1": "丟進一般垃圾",
+                "q3-opt2": "查看包裝標籤",
+                "q3-opt3": "手機上網搜尋",
+                q4: "4. 如果將鉛筆盒丟進一般垃圾桶，是否正確？",
+                q5: "5. 您願意為垃圾分類做出貢獻嗎？",
+                q6: "6. 使用手機識別垃圾是否會讓分類變得更容易？ (1-5分)",
+                "q6-placeholder": "1 (不會) 到 5 (絕對會)",
+                q7: "7. 垃圾識別技術是否會增加您進行垃圾分類的意願？",
+                "section-product": "產品部分",
+                "product-intro": "想像您剛了解了我們創新的垃圾識別工具，它可以自動掃描並識別垃圾。",
+                q8: "8. 請為我們的產品打分 (1-10分)",
+                "q8-placeholder": "1 (差) 到 10 (優秀)",
+                q9: "9. 您會向他人推薦這款產品嗎？ (1-10分)",
+                "q9-placeholder": "1 (不會) 到 10 (肯定會)",
+                "submit-btn": "提交問卷",
+                yes: "是",
+                no: "否",
+                correct: "正確",
+                incorrect: "錯誤",
+                submitting: "提交中...",
+                success: "提交成功",
+                failure: "提交失敗。請檢查網路或 API 端點並重試。"
+            }
+        };
 
-    await fetch("/api/survey", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-    });
+        let currentLang = localStorage.getItem('lang') || 'en';
 
-    alert("已送出");
-}
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('lang', lang);
 
-</script>
+            // Update active state of buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${lang}`).classList.add('active');
+
+            // Translate text content
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+
+            // Translate attributes (like placeholders)
+            document.querySelectorAll('[data-i18n-attr]').forEach(el => {
+                const attrData = el.getAttribute('data-i18n-attr').split(':');
+                const attr = attrData[0];
+                const key = attrData[1];
+                if (translations[lang] && translations[lang][key]) {
+                    el.setAttribute(attr, translations[lang][key]);
+                }
+            });
+
+            // Update HTML lang attribute
+            document.documentElement.lang = lang;
+        }
+
+        // Initialize language
+        document.addEventListener('DOMContentLoaded', () => {
+            setLanguage(currentLang);
+        });
+
+        document.getElementById('surveyForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submitBtn');
+            const messageBox = document.getElementById('message');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = translations[currentLang].submitting;
+            messageBox.style.display = 'none';
+            messageBox.className = '';
+
+            // Gather form data
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+
+            // Add current language to the data
+            data.language = currentLang;
+
+            // Convert numeric fields from string to Number before sending
+            const numericFields = ['age', 'self_eval', 'phone_makes_easier', 'product_rating', 'recommend_product'];
+            numericFields.forEach(field => {
+                if (data[field]) data[field] = Number(data[field]);
+            });
+
+            const API_URL = 'https://YOUR_VERCEL_APP.vercel.app/api/survey';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        messageBox.textContent = translations[currentLang].success;
+                        messageBox.classList.add('success');
+                        messageBox.style.display = 'block';
+                        this.reset(); // clear form
+                    } else {
+                        throw new Error('API returned failure');
+                    }
+                } else {
+                    throw new Error(`Server status: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error submitting form:', error);
+                messageBox.textContent = translations[currentLang].failure;
+                messageBox.classList.add('error');
+                messageBox.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = translations[currentLang]['submit-btn'];
+            }
+        });
+    </script>
 
 </body>
+
 </html>
