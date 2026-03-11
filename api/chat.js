@@ -32,7 +32,6 @@ async function handler(req, res) {
 
     try {
         const { message, image, conversationHistory, category } = req.body;
-        // API Keys 從 providers 陣列中讀取 (見下方)
 
         // ========== System Prompt ==========
         const systemPrompt = `你是一位親切且專業的環境保護專家，你的名字叫「SmartRecycle AI」。
@@ -54,18 +53,12 @@ async function handler(req, res) {
             currentMessageText = `[系統資訊: 影像辨識初步結果為 ${category.name}] \n用戶訊息: ${message}`;
         }
 
-        // ========== 定義所有可用的 API Key (優先順序) ==========
+        // ========== 定義所有可用的 Gemini API Keys (優先順序) ==========
         const providers = [
-            // Google Gemini keys (優先)
-            { type: 'gemini', key: process.env.Gemini_API_Key, label: 'Gemini(default)' },
-            { type: 'gemini', key: process.env.Gemini_API_Key_1, label: 'Gemini(1)' },
-            { type: 'gemini', key: process.env.Gemini_API_Key_3, label: 'Gemini(3)' },
-            { type: 'gemini', key: process.env.Gemini_API_Key_4, label: 'Gemini(4)' },
-            // OpenRouter keys
-            { type: 'openrouter', key: process.env.OpenRouter_API_Key, label: 'OR(default)' },
-            { type: 'openrouter', key: process.env.OpenRouter_API_Key_1, label: 'OR(1)' },
-            { type: 'openrouter', key: process.env.OpenRouter_API_Key_3, label: 'OR(3)' },
-            { type: 'openrouter', key: process.env.OpenRouter_API_Key_4, label: 'OR(4)' },
+            { key: process.env.Gemini_API_Key, label: 'Gemini(default)' },
+            { key: process.env.Gemini_API_Key_1, label: 'Gemini(1)' },
+            { key: process.env.Gemini_API_Key_3, label: 'Gemini(3)' },
+            { key: process.env.Gemini_API_Key_4, label: 'Gemini(4)' },
         ].filter(p => p.key); // 過濾掉沒有設定的 key
 
         let lastReply = null;
@@ -74,12 +67,7 @@ async function handler(req, res) {
             const provider = providers[i];
             console.log(`[API] Trying ${provider.label}...`);
 
-            let result;
-            if (provider.type === 'openrouter') {
-                result = await tryOpenRouter(provider.key, systemPrompt, currentMessageText, image, conversationHistory);
-            } else {
-                result = await tryGemini(provider.key, systemPrompt, currentMessageText, image, conversationHistory);
-            }
+            const result = await tryGemini(provider.key, systemPrompt, currentMessageText, image, conversationHistory);
 
             // 成功 → 直接回傳
             if (result.success) {
@@ -93,7 +81,7 @@ async function handler(req, res) {
                 return res.status(200).json({ reply: result.reply });
             }
 
-            // 429 → 嘗試下一個 provider
+            // 429 → 嘗試下一個 key
             if (i < providers.length - 1) {
                 const next = providers[i + 1];
                 console.log(`[DEBUG] Changing to ${next.label}... (waiting 2s)`);
@@ -101,7 +89,7 @@ async function handler(req, res) {
             }
         }
 
-        // 所有 provider 都失敗
+        // 所有 key 都失敗
         return res.status(200).json({
             reply: lastReply || '⚠️ 所有 AI 服務皆不可用，請稍後再試。'
         });
@@ -111,73 +99,6 @@ async function handler(req, res) {
         res.status(200).json({
             reply: `⚠️ 伺服器錯誤: ${error.message}`
         });
-    }
-}
-
-// ========== OpenRouter 呼叫 ==========
-async function tryOpenRouter(apiKey, systemPrompt, userMessage, image, conversationHistory) {
-    try {
-        // 組裝 OpenRouter messages 格式
-        const messages = [];
-
-        // Gemma 3 不支援 system role，放在第一個 user message
-        messages.push({ role: "user", content: systemPrompt });
-
-        // 歷史紀錄 (最多 10 則)
-        if (conversationHistory && conversationHistory.length > 0) {
-            conversationHistory.slice(-10).forEach(msg => {
-                messages.push({
-                    role: msg.role === 'assistant' ? 'assistant' : 'user',
-                    content: msg.content
-                });
-            });
-        }
-
-        // 當前 user message (含圖片)
-        const userContent = [{ type: "text", text: userMessage }];
-        if (image) {
-            userContent.push({
-                type: "image_url",
-                image_url: { url: image }
-            });
-        }
-        messages.push({ role: "user", content: userContent });
-
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "HTTP-Referer": "https://penter405.github.io",
-                "X-Title": "SmartRecycle AI",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "model": "google/gemma-3-27b-it:free",
-                "messages": messages,
-                "top_p": 1,
-                "temperature": 0.7,
-                "repetition_penalty": 1
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            const errorMsg = errorData?.error?.message || errorData?.error || JSON.stringify(errorData);
-            console.error('[API] OpenRouter Error:', response.status, errorMsg);
-
-            if (response.status === 429) {
-                return { success: false, is429: true, reply: `⚠️ OpenRouter 忙碌中 (429)` };
-            }
-            return { success: false, is429: false, reply: `⚠️ AI 錯誤 (${response.status}): ${errorMsg}` };
-        }
-
-        const data = await response.json();
-        const reply = data.choices[0].message.content;
-        return { success: true, reply };
-
-    } catch (error) {
-        console.error('[API] OpenRouter Exception:', error);
-        return { success: false, is429: false, reply: `⚠️ OpenRouter 連線失敗: ${error.message}` };
     }
 }
 

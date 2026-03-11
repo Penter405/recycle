@@ -187,6 +187,24 @@ async function loadModel() {
         }
 
         AppState.isModelLoaded = true;
+
+        // 暖機：執行一次假預測，讓 TF.js 預先編譯 GPU shaders
+        // 這樣用戶第一次點「檢查辨識」就不會卡住
+        updateStatus('🔧 系統暖機中...', 'loading');
+        try {
+            if (Elements.video && Elements.video.videoWidth > 0) {
+                const warmupCanvas = document.createElement('canvas');
+                warmupCanvas.width = Elements.video.videoWidth;
+                warmupCanvas.height = Elements.video.videoHeight;
+                const ctx = warmupCanvas.getContext('2d');
+                ctx.drawImage(Elements.video, 0, 0);
+                await predict(warmupCanvas);
+                console.log('[DEBUG] ✅ 暖機完成（首次推論已執行）');
+            }
+        } catch (e) {
+            console.warn('[DEBUG] 暖機失敗（不影響後續使用）:', e.message);
+        }
+
         updateStatus('🚀 系統就緒', 'ready');
 
     } catch (error) {
