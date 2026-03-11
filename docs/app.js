@@ -614,47 +614,82 @@ function initAIChatListeners() {
     // 展開/收合按鈕
     AIChatElements.toggle?.addEventListener('click', toggleAIChat);
 
-    // 滑動手勢
+    // 滑動手勢 (觸控 + 滑鼠，兩種設備都支援)
     let startY = 0;
     let currentY = 0;
     let isDragging = false;
+    let hasMoved = false;
 
-    AIChatElements.handle?.addEventListener('touchstart', (e) => {
-        startY = e.touches[0].clientY;
+    // --- 共用邏輯 ---
+    function onDragStart(y) {
+        startY = y;
+        currentY = y;
         isDragging = true;
-    });
+        hasMoved = false;
+    }
 
-    AIChatElements.handle?.addEventListener('touchmove', (e) => {
+    function onDragMove(y, e) {
         if (!isDragging) return;
-        currentY = e.touches[0].clientY;
+        currentY = y;
         const deltaY = currentY - startY;
+
+        // 超過 5px 算有移動（區分 click 和 drag）
+        if (Math.abs(deltaY) > 5) hasMoved = true;
 
         // 只允許向下滑動收合，向上滑動展開
         if (AIChatState.isExpanded && deltaY > 0) {
-            // 展開狀態下向下滑動 → 收合
             e.preventDefault();
         } else if (!AIChatState.isExpanded && deltaY < 0) {
-            // 收合狀態下向上滑動 → 展開
             e.preventDefault();
         }
-    });
+    }
 
-    AIChatElements.handle?.addEventListener('touchend', (e) => {
+    function onDragEnd() {
         if (!isDragging) return;
         isDragging = false;
 
         const deltaY = currentY - startY;
-        const threshold = 50; // 滑動閾值
+        const threshold = 50;
 
-        if (Math.abs(deltaY) > threshold) {
+        if (hasMoved && Math.abs(deltaY) > threshold) {
             if (deltaY > 0 && AIChatState.isExpanded) {
-                // 向下滑動超過閾值 → 收合
                 closeAIChat();
             } else if (deltaY < 0 && !AIChatState.isExpanded) {
-                // 向上滑動超過閾值 → 展開
                 openAIChat();
             }
+        } else if (!hasMoved) {
+            // 沒有明顯滑動 → 當成點擊，切換展開/收合
+            toggleAIChat();
         }
+    }
+
+    // --- 觸控事件 (手機) ---
+    AIChatElements.handle?.addEventListener('touchstart', (e) => {
+        onDragStart(e.touches[0].clientY);
+    });
+
+    AIChatElements.handle?.addEventListener('touchmove', (e) => {
+        onDragMove(e.touches[0].clientY, e);
+    });
+
+    AIChatElements.handle?.addEventListener('touchend', () => {
+        onDragEnd();
+    });
+
+    // --- 滑鼠事件 (電腦) ---
+    AIChatElements.handle?.addEventListener('mousedown', (e) => {
+        onDragStart(e.clientY);
+        e.preventDefault(); // 防止選取文字
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        onDragMove(e.clientY, e);
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        onDragEnd();
     });
 
     // 發送按鈕
