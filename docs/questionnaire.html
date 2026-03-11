@@ -180,6 +180,16 @@
         <h2 data-i18n="title">Garbage Classification & Recognition Product Questionnaire</h2>
 
         <form id="surveyForm">
+            <h3 data-i18n="section-preface">Preface</h3>
+            <p style="margin-bottom: 20px; line-height: 1.8;" data-i18n="preface-text">
+                親愛的同學，你（妳）好！這份問卷是用來瞭解你（妳）對於垃圾分類的看法，沒有標準答案，你（妳）可以放心地回答問題，我們將會詢問關於您對於垃圾分類觀念和幫助我們改進我們的產品。共20題，請根據你（妳）個人的感受。每題只能圈選一個選項，請不要重複或漏填。
+            </p>
+            <div style="text-align: center; margin-bottom: 30px;">
+                <a href="https://penter405.github.io/recycle/" target="_blank" class="submit-btn" style="display: inline-block; text-decoration: none; width: auto; padding: 10px 20px;" data-i18n="try-product-btn">
+                    Try Our Product / 體驗我們的產品
+                </a>
+            </div>
+
             <h3 data-i18n="section-basic">Basic Information</h3>
 
             <div class="form-group">
@@ -234,9 +244,7 @@
             </div>
 
             <div class="form-group">
-                <label class="question-title" data-i18n="q4">4. If a pencil case is thrown into the general trash bin,
-                    is it
-                    correct?</label>
+                <label class="question-title" data-i18n="q4">4. If a cloth pencil case is thrown into the general trash bin, is it correct?</label>
                 <div class="radio-group">
                     <label class="radio-option">
                         <input type="radio" name="pencil_case_correct" value="correct" required> <span
@@ -249,9 +257,34 @@
                 </div>
             </div>
 
+            <div class="form-group" style="margin-left: 20px;">
+                <label class="question-title" data-i18n="q4_1">4-1. If you see someone throwing a textbook into general trash, would you remind them they made a mistake?</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="remind_textbook" value="yes" required> <span
+                            data-i18n="yes">Yes</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="remind_textbook" value="no"> <span data-i18n="no">No</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-left: 20px;">
+                <label class="question-title" data-i18n="q4_2">4-2. Suppose someone tells you that slippers can be thrown directly into the general trash bin. Do you agree?</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="agree_slippers" value="yes" required> <span
+                            data-i18n="yes">Yes</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="agree_slippers" value="no"> <span data-i18n="no">No</span>
+                    </label>
+                </div>
+            </div>
+
             <div class="form-group">
-                <label class="question-title" data-i18n="q5">5. Are you willing to contribute to garbage
-                    classification?</label>
+                <label class="question-title" data-i18n="q5">5. Are you willing to contribute to garbage classification?</label>
                 <div class="radio-group">
                     <label class="radio-option">
                         <input type="radio" name="willing_to_contribute" value="yes" required> <span
@@ -263,16 +296,59 @@
                 </div>
             </div>
 
+            <div class="form-group" style="margin-left: 20px;">
+                <label class="question-title" data-i18n="q5_1">5-1. (If unwilling) Why are you unwilling to classify garbage?</label>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                    <label class="radio-option">
+                        <input type="radio" name="reason_unwilling" value="a"> <span data-i18n="q5_1_a">a. It's too troublesome</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reason_unwilling" value="b"> <span data-i18n="q5_1_b">b. Why should I do it</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reason_unwilling" value="c"> <span data-i18n="q5_1_c">c. Someone else will do it, anyway it's not me</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-left: 20px;">
+                <label class="question-title" data-i18n="q5_2">5-2. (If willing) Why are you willing to classify garbage?</label>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                    <label class="radio-option">
+                        <input type="radio" name="reason_willing" value="a"> <span data-i18n="q5_2_a">a. Do my best for the environment</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reason_willing" value="b"> <span data-i18n="q5_2_b">b. My conscience tells me so</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reason_willing" value="c"> <span data-i18n="q5_2_c">c. Don't want to trouble others</span>
+                    </label>
+                </div>
+            </div>
+
             <div class="form-group">
-                <label class="question-title" for="phone_makes_easier" data-i18n="q6">6. Would using a phone to identify
-                    garbage make classification easier? (1-5 score)</label>
+                <label class="question-title" for="phone_makes_easier" data-i18n="q6">6. Would using a phone to identify garbage make classification easier? (1-5 score)</label>
                 <input type="number" id="phone_makes_easier" name="phone_makes_easier" min="1" max="5"
                     placeholder="1 (No) to 5 (Absolutely)" required data-i18n-attr="placeholder:q6-placeholder">
             </div>
 
+            <div class="form-group" style="margin-left: 20px;">
+                <label class="question-title" data-i18n="q6_1">6-1. (If no) Why do you think it is inconvenient?</label>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                    <label class="radio-option">
+                        <input type="radio" name="reason_inconvenient" value="a"> <span data-i18n="q6_1_a">a. Don't want to classify</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reason_inconvenient" value="b"> <span data-i18n="q6_1_b">b. Don't want a garbage app on my phone</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reason_inconvenient" value="c"> <span data-i18n="q6_1_c">c. Unnecessary</span>
+                    </label>
+                </div>
+            </div>
+
             <div class="form-group">
-                <label class="question-title" data-i18n="q7">7. Would garbage recognition technology increase your
-                    willingness to classify garbage?</label>
+                <label class="question-title" data-i18n="q7">7. Would garbage recognition technology increase your willingness to classify garbage?</label>
                 <div class="radio-group">
                     <label class="radio-option">
                         <input type="radio" name="increase_willingness_tech" value="yes" required> <span
@@ -280,6 +356,21 @@
                     </label>
                     <label class="radio-option">
                         <input type="radio" name="increase_willingness_tech" value="no"> <span data-i18n="no">No</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-left: 20px;">
+                <label class="question-title" data-i18n="q7_1">7-1. (If no) Why are you unwilling?</label>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                    <label class="radio-option">
+                        <input type="radio" name="reason_unwilling_tech" value="a"> <span data-i18n="q7_1_a">a. I don't want to classify at all</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reason_unwilling_tech" value="b"> <span data-i18n="q7_1_b">b. It won't increase willingness, but I will classify</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="reason_unwilling_tech" value="c"> <span data-i18n="q7_1_c">c. Not much motivation for me to classify</span>
                     </label>
                 </div>
             </div>
@@ -324,6 +415,9 @@
                 "gender-female": "Female",
                 "gender-other": "Other",
                 "section-questions": "Questions",
+                "section-preface": "Preface",
+                "preface-text": "Dear student, hello! This questionnaire is designed to understand your views on garbage classification. There are no standard answers, so please feel free to answer the questions. We will ask about your concepts of garbage classification and help us improve our products. A total of 20 questions, please based on your personal feelings. Please circle only one option for each question, do not repeat or omit.",
+                "try-product-btn": "Try Our Product",
                 q1: "1. Do you sometimes feel confused about garbage classification?",
                 q2: "2. Self-evaluation of garbage classification ability (1-5 score)",
                 "q2-placeholder": "1 (Low) to 5 (High)",
@@ -332,11 +426,29 @@
                 "q3-opt1": "Throw into general trash",
                 "q3-opt2": "Check the package label",
                 "q3-opt3": "Search with phone",
-                q4: "4. If a pencil case is thrown into the general trash bin, is it correct?",
+                q4: "4. If a cloth pencil case is thrown into the general trash bin, is it correct?",
+                q4_1: "4-1. If you see someone throwing a textbook into general trash, would you remind them they made a mistake?",
+                q4_2: "4-2. Suppose someone tells you that slippers can be thrown directly into the general trash bin. Do you agree?",
                 q5: "5. Are you willing to contribute to garbage classification?",
+                q5_1: "5-1. (If unwilling) Why are you unwilling to classify garbage?",
+                q5_1_a: "a. It's too troublesome",
+                q5_1_b: "b. Why should I do it",
+                q5_1_c: "c. Someone else will do it, anyway it's not me",
+                q5_2: "5-2. (If willing) Why are you willing to classify garbage?",
+                q5_2_a: "a. Do my best for the environment",
+                q5_2_b: "b. My conscience tells me so",
+                q5_2_c: "c. Don't want to trouble others",
                 q6: "6. Would using a phone to identify garbage make classification easier? (1-5 score)",
                 "q6-placeholder": "1 (No) to 5 (Absolutely)",
+                q6_1: "6-1. (If no) Why do you think it is inconvenient?",
+                q6_1_a: "a. Don't want to classify",
+                q6_1_b: "b. Don't want a garbage app on my phone",
+                q6_1_c: "c. Unnecessary",
                 q7: "7. Would garbage recognition technology increase your willingness to classify garbage?",
+                q7_1: "7-1. (If no) Why are you unwilling?",
+                q7_1_a: "a. I don't want to classify at all",
+                q7_1_b: "b. It won't increase willingness, but I will classify",
+                q7_1_c: "c. Not much motivation for me to classify",
                 "section-product": "Product Section",
                 "product-intro": "Imagine you have just learned about our innovative garbage recognition tool that automatically scans and identifies waste.",
                 q8: "8. Please rate our product (1-10)",
@@ -363,6 +475,9 @@
                 "gender-female": "女",
                 "gender-other": "其他",
                 "section-questions": "調查問題",
+                "section-preface": "前言",
+                "preface-text": "親愛的同學，你（妳）好！這份問卷是用來瞭解你（妳）對於垃圾分類的看法，沒有標準答案，你（妳）可以放心地回答問題，我們將會詢問關於您對於垃圾分類觀念和幫助我們改進我們的產品。共20題，請根據你（妳）個人的感受。每題只能圈選一個選項，請不要重複或漏填。",
+                "try-product-btn": "體驗我們的產品",
                 q1: "1. 您是否偶爾會對垃圾分類感到困惑？",
                 q2: "2. 垃圾分類能力自我評估 (1-5分)",
                 "q2-placeholder": "1 (低) 到 5 (高)",
@@ -371,11 +486,29 @@
                 "q3-opt1": "丟進一般垃圾",
                 "q3-opt2": "查看包裝標籤",
                 "q3-opt3": "手機上網搜尋",
-                q4: "4. 如果將鉛筆盒丟進一般垃圾桶，是否正確？",
+                q4: "4. 如果將布製鉛筆盒丟進一般垃圾桶，是否正確？",
+                q4_1: "4-1. 若是看見有人將課本丟到一般垃圾，您是否會提醒他丟錯了？",
+                q4_2: "4-2. 假設有人跟你說拖鞋直接丟一般垃圾桶，你是否同意？",
                 q5: "5. 您願意為垃圾分類做出貢獻嗎？",
+                q5_1: "5-1. (若是不願意)請問您因何而不願垃圾分類？",
+                q5_1_a: "a.麻煩死了",
+                q5_1_b: "b.幹嘛要做",
+                q5_1_c: "c.有人會做，反正不是我",
+                q5_2: "5-2. (若是願意)請問您因何而願意垃圾分類？",
+                q5_2_a: "a.為了環境盡力",
+                q5_2_b: "b.良心告訴我",
+                q5_2_c: "c.不希望麻煩他人",
                 q6: "6. 使用手機識別垃圾是否會讓分類變得更容易？ (1-5分)",
                 "q6-placeholder": "1 (不會) 到 5 (絕對會)",
+                q6_1: "6-1. (否)為何覺得不便？",
+                q6_1_a: "a.不想分類",
+                q6_1_b: "b.不希望手機中有垃圾APP",
+                q6_1_c: "c.多此一舉",
                 q7: "7. 垃圾識別技術是否會增加您進行垃圾分類的意願？",
+                q7_1: "7-1. (否)因何而不願？",
+                q7_1_a: "a.根本不想分",
+                q7_1_b: "b.不增加意願，但會分類",
+                q7_1_c: "c.沒什麼動力讓我分類",
                 "section-product": "產品部分",
                 "product-intro": "想像您剛了解了我們創新的垃圾識別工具，它可以自動掃描並識別垃圾。",
                 q8: "8. 請為我們的產品打分 (1-10分)",

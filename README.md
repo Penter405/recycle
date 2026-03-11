@@ -81,6 +81,7 @@ python -m http.server 8000
 
 ## 🙏 致謝
 
+## [colab](https://colab.research.google.com/drive/1J_5QDh8ikT-NIAgqIDr9wtHJvxWTJd0S?usp=sharing)
 - [TrashNet](https://github.com/garythung/trashnet) - 訓練資料來源
 - [TeachableMachine](https://teachablemachine.withgoogle.com/) - 模型訓練工具
 <!--- [TensorFlow.js](https://www.tensorflow.org/js) - 瀏覽器端機器學習(not using ,beacuse too tried)
