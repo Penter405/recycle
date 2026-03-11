@@ -216,7 +216,7 @@ async function tryGemini(apiKey, systemPrompt, userMessage, image, conversationH
         contents.push({ role: "user", parts });
 
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-preview:generateContent`,
             {
                 method: "POST",
                 headers: {

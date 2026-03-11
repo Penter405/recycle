@@ -1,0 +1,93 @@
+0
+: 
+{name: 'models/gemini-2.5-flash', displayName: 'Gemini 2.5 Flash', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+1
+: 
+{name: 'models/gemini-2.5-pro', displayName: 'Gemini 2.5 Pro', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+2
+: 
+{name: 'models/gemini-2.0-flash', displayName: 'Gemini 2.0 Flash', inputTokenLimit: 1048576, outputTokenLimit: 8192, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+3
+: 
+{name: 'models/gemini-2.0-flash-001', displayName: 'Gemini 2.0 Flash 001', inputTokenLimit: 1048576, outputTokenLimit: 8192, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+4
+: 
+{name: 'models/gemini-2.0-flash-lite-001', displayName: 'Gemini 2.0 Flash-Lite 001', inputTokenLimit: 1048576, outputTokenLimit: 8192, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+5
+: 
+{name: 'models/gemini-2.0-flash-lite', displayName: 'Gemini 2.0 Flash-Lite', inputTokenLimit: 1048576, outputTokenLimit: 8192, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+6
+: 
+{name: 'models/gemini-2.5-flash-preview-tts', displayName: 'Gemini 2.5 Flash Preview TTS', inputTokenLimit: 8192, outputTokenLimit: 16384, methods: 'countTokens, generateContent'}
+7
+: 
+{name: 'models/gemini-2.5-pro-preview-tts', displayName: 'Gemini 2.5 Pro Preview TTS', inputTokenLimit: 8192, outputTokenLimit: 16384, methods: 'countTokens, generateContent, batchGenerateContent'}
+8
+: 
+{name: 'models/gemma-3-1b-it', displayName: 'Gemma 3 1B', inputTokenLimit: 32768, outputTokenLimit: 8192, methods: 'generateContent, countTokens'}
+9
+: 
+{name: 'models/gemma-3-4b-it', displayName: 'Gemma 3 4B', inputTokenLimit: 32768, outputTokenLimit: 8192, methods: 'generateContent, countTokens'}
+10
+: 
+{name: 'models/gemma-3-12b-it', displayName: 'Gemma 3 12B', inputTokenLimit: 32768, outputTokenLimit: 8192, methods: 'generateContent, countTokens'}
+11
+: 
+{name: 'models/gemma-3-27b-it', displayName: 'Gemma 3 27B', inputTokenLimit: 131072, outputTokenLimit: 8192, methods: 'generateContent, countTokens'}
+12
+: 
+{name: 'models/gemma-3n-e4b-it', displayName: 'Gemma 3n E4B', inputTokenLimit: 8192, outputTokenLimit: 2048, methods: 'generateContent, countTokens'}
+13
+: 
+{name: 'models/gemma-3n-e2b-it', displayName: 'Gemma 3n E2B', inputTokenLimit: 8192, outputTokenLimit: 2048, methods: 'generateContent, countTokens'}
+14
+: 
+{name: 'models/gemini-flash-latest', displayName: 'Gemini Flash Latest', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+15
+: 
+{name: 'models/gemini-flash-lite-latest', displayName: 'Gemini Flash-Lite Latest', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+16
+: 
+{name: 'models/gemini-pro-latest', displayName: 'Gemini Pro Latest', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+17
+: 
+{name: 'models/gemini-2.5-flash-lite', displayName: 'Gemini 2.5 Flash-Lite', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+18
+: 
+{name: 'models/gemini-2.5-flash-image', displayName: 'Nano Banana', inputTokenLimit: 32768, outputTokenLimit: 32768, methods: 'generateContent, countTokens, batchGenerateContent'}
+19
+: 
+{name: 'models/gemini-2.5-flash-lite-preview-09-2025', displayName: 'Gemini 2.5 Flash-Lite Preview Sep 2025', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+20
+: 
+{name: 'models/gemini-3-pro-preview', displayName: 'Gemini 3 Pro Preview', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+21
+: 
+{name: 'models/gemini-3-flash-preview', displayName: 'Gemini 3 Flash Preview', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+22
+: 
+{name: 'models/gemini-3.1-pro-preview', displayName: 'Gemini 3.1 Pro Preview', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+23
+: 
+{name: 'models/gemini-3.1-pro-preview-customtools', displayName: 'Gemini 3.1 Pro Preview Custom Tools', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+24
+: 
+{name: 'models/gemini-3.1-flash-lite-preview', displayName: 'Gemini 3.1 Flash Lite Preview', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens, createCachedContent, batchGenerateContent'}
+25
+: 
+{name: 'models/gemini-3-pro-image-preview', displayName: 'Nano Banana Pro', inputTokenLimit: 131072, outputTokenLimit: 32768, methods: 'generateContent, countTokens, batchGenerateContent'}
+26
+: 
+{name: 'models/nano-banana-pro-preview', displayName: 'Nano Banana Pro', inputTokenLimit: 131072, outputTokenLimit: 32768, methods: 'generateContent, countTokens, batchGenerateContent'}
+27
+: 
+{name: 'models/gemini-3.1-flash-image-preview', displayName: 'Nano Banana 2', inputTokenLimit: 65536, outputTokenLimit: 65536, methods: 'generateContent, countTokens, batchGenerateContent'}
+28
+: 
+{name: 'models/gemini-robotics-er-1.5-preview', displayName: 'Gemini Robotics-ER 1.5 Preview', inputTokenLimit: 1048576, outputTokenLimit: 65536, methods: 'generateContent, countTokens'}
+29
+: 
+{name: 'models/gemini-2.5-computer-use-preview-10-2025', displayName: 'Gemini 2.5 Computer Use Preview 10-2025', inputTokenLimit: 131072, outputTokenLimit: 65536, methods: 'generateContent, countTokens'}
+30
+: 
+{name: 'models/deep-research-pro-preview-12-2025', displayName: 'Deep Research Pro Preview (Dec-12-2025)', inputTokenLimit: 131072, outputTokenLimit: 65536, methods: 'generateContent, countTokens'}
