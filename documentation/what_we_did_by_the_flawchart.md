@@ -235,8 +235,16 @@ function handleImageUpload(event) {
 
 ### 說明
 系統使用 Google Teachable Machine 匯出的模型來分析圖片。模型透過 `tmImage.load()` 載入，然後使用 `model.predict()` 對輸入圖片進行分類。模型會回傳每個類別的機率值（probability），系統取最高機率的類別作為辨識結果。
+### 4-1-1. 從Teachable Machine 網站獲得模型
+#### 上傳訊練資料與測試模型
 
-### 4-1. 載入模型
+![alt text](<螢幕擷取畫面 2026-04-01 112005.png>)
+
+#### 匯出模型
+
+![alt text](image.png)
+
+### 4-1-2. 載入模型
 📁 **檔案**: `docs/app.js` — **第 153~217 行**
 
 ```javascript
