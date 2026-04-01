@@ -1,0 +1,2 @@
+i need version 2: developer version, 關於我是怎麼寫出這個的：
+前往某人的github 抓訓練資料，還有自己拍照(你應該可以在readme.md找到)前往teach.. machine 上傳資料並測試模型 下載模型 貼給antigravity 後生成 前端與後端程式碼  git push 到penter405 的github repo  連結各個serverless 與api 
