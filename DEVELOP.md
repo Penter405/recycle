@@ -66,6 +66,114 @@ pip install tensorflow tensorflowjs Pillow requests
 
 ---
 
+## 系統架構圖
+
+### 整體架構
+
+```mermaid
+flowchart TB
+    subgraph Training["🏋️ 訓練階段 (離線)"]
+        direction TB
+        CollectData["collect_data.py<br/>下載 TrashNet 資料集"]
+        Capture["capture.html<br/>手機拍攝收集"]
+        TrainData["train/ 資料夾<br/>分類訓練圖片"]
+        TM_Train["Teachable Machine<br/>線上訓練"]
+        Export["匯出模型<br/>model.json + weights.bin"]
+
+        CollectData --> TrainData
+        Capture --> TrainData
+        TrainData --> TM_Train
+        TM_Train --> Export
+    end
+
+    subgraph Deployment["🚀 部署"]
+        direction TB
+        Export --> ModelDir["docs/model/<br/>模型檔案"]
+        ModelDir --> GHPages["GitHub Pages<br/>靜態託管"]
+    end
+
+    subgraph Runtime["⚡ 執行階段 (線上)"]
+        direction TB
+        Browser["📱 手機瀏覽器"]
+        InitCam["initCamera()<br/>啟動相機"]
+        LoadModel["loadModel()<br/>載入 TM 模型"]
+        CaptureImg["captureAndPredict()<br/>擷取 + 辨識"]
+        Predict["predictWithCustomModel()<br/>模型推論"]
+        Display["displayResult()<br/>顯示結果"]
+        Speak["speak()<br/>語音播報"]
+        Reset["resetCamera()<br/>重新拍攝"]
+
+        Browser --> InitCam
+        Browser --> LoadModel
+        InitCam --> CaptureImg
+        LoadModel --> CaptureImg
+        CaptureImg --> Predict
+        Predict --> Display
+        Display --> Speak
+        Display --> Reset
+        Reset -->|迴圈| CaptureImg
+    end
+
+    GHPages --> Browser
+```
+
+### 前端檔案關係
+
+```mermaid
+flowchart LR
+    subgraph HTML["index.html"]
+        direction TB
+        H1["載入 TensorFlow.js"]
+        H2["載入 Teachable Machine 庫"]
+        H3["載入 marked.js"]
+        H4["載入 config.js"]
+        H5["載入 app.js"]
+    end
+
+    subgraph Config["config.js"]
+        direction TB
+        C1["MODEL 設定"]
+        C2["RECOGNITION 閾值"]
+        C3["CATEGORIES 類別"]
+        C4["API 端點"]
+    end
+
+    subgraph App["app.js"]
+        direction TB
+        A1["相機控制"]
+        A2["模型載入/預測"]
+        A3["結果顯示"]
+        A4["語音播報"]
+        A5["AI Chat"]
+    end
+
+    subgraph Model["model/"]
+        direction TB
+        M1["model.json"]
+        M2["weights.bin"]
+        M3["metadata.json"]
+    end
+
+    HTML --> Config
+    HTML --> App
+    Config -->|讀取設定| App
+    App -->|載入| Model
+```
+
+### 模型訓練流水線
+
+```mermaid
+flowchart LR
+    A["📸 收集資料<br/>collect_data.py<br/>capture.html"] --> B["📂 整理分類<br/>train/ 資料夾<br/>6 個子目錄"]
+    B --> C["🧠 訓練模型<br/>Teachable Machine<br/>或 Colab"]
+    C --> D["📦 匯出模型<br/>TensorFlow.js 格式"]
+    D --> E["📋 部署到<br/>docs/model/"]
+    E --> F["🌐 上傳 GitHub<br/>GitHub Pages"]
+    F --> G["✅ 使用者<br/>開啟網頁辨識"]
+```
+
+---
+
 ## 模型訓練
 
 ### 使用 Teachable Machine（推薦）
