@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系統流程圖與操作截圖對照 - 雙分支版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 40px 10px;
+        }
+
+        /* 讓外圍容器可以絕對定位 SVG */
+        .wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 1800px;
+        }
+
+        .flowchart-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+            width: 100%;
+        }
+
+        /* SVG 圖層放在容器底層 */
+        #connection-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* 各主節點/群組 */
+        .step-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            position: relative;
+            justify-content: center;
+        }
+
+        .step-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .step-box {
+            border: 2px solid #555;
+            border-radius: 14px;
+            padding: 18px 14px;
+            width: 170px;
+            min-height: 100px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .step-box h3 {
+            font-size: 13px;
+            font-weight: 700;
+            color: #222;
+            margin-bottom: 2px;
+        }
+
+        .step-box ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .step-box ul li {
+            font-size: 11px;
+            color: #333;
+            line-height: 1.55;
+            padding-left: 12px;
+            position: relative;
+        }
+
+        .step-box ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .screenshot-block {
+            margin-top: 12px;
+            width: 150px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px dashed #bbb;
+            background: #f9f9f9;
+        }
+
+        .screenshot-block img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        .screenshot-block img:hover {
+            transform: scale(1.03);
+            opacity: 0.9;
+        }
+
+        /* Lightbox Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            animation: zoomIn 0.2s ease-out;
+        }
+
+        @keyframes zoomIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover { color: #ccc; }
+
+        .color-block {
+            width: 70px;
+            height: 50px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .color-green  { background: linear-gradient(135deg, #a8e6a3, #7bc67e); }
+        .color-blue   { background: linear-gradient(135deg, #7ec8e3, #5ba3c9); }
+        .color-teal   { background: linear-gradient(135deg, #80cbc4, #4db6ac); }
+        .color-amber  { background: linear-gradient(135deg, #ffe082, #ffca28); }
+        .color-sky    { background: linear-gradient(135deg, #81d4fa, #29b6f6); }
+        .color-rose   { background: linear-gradient(135deg, #f48fb1, #e91e63); }
+
+        .step-box.decision {
+            background: #fffde7;
+            border-color: #f9a825;
+        }
+
+        .step-box.decision h3 {
+            color: #e65100;
+        }
+
+        /* 決策子項目 */
+        .branch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .branch-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+        }
+        .branch-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .branch-box {
+            border: 2px solid #555;
+            border-radius: 10px;
+            padding: 10px;
+            width: 90px;
+            background: #ffffff;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .branch-box.yes { border-color: #e53935; color: #c62828; }
+        .branch-box.no { border-color: #43a047; color: #2e7d32; }
+        .branch-label { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+        .branch-label.yes { color: #c62828; }
+        .branch-label.no { color: #2e7d32; }
+        .loop-label { font-size: 10px; color: #2e7d32; margin-top: 4px; font-style: italic; }
+
+        /* 一般箭頭間距 */
+        .arrow-gap {
+            width: 40px;
+            flex-shrink: 0;
+        }
+
+        /* 雙分支容器 */
+        .parallel-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin: 0 40px; /* 給動態繪製折線的留白空間 */
+        }
+
+        .branch-flow {
+            display: flex;
+            align-items: flex-start;
+            gap: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h2 style="margin-bottom: 20px; color: #333;">系統流程圖與操作截圖對照 - 雙分支版</h2>
+        
+        <div class="flowchart-container" id="flowchart">
+            <!-- 底層 SVG 畫布，負責所有連線 -->
+            <svg id="connection-lines"></svg>
+
+            <!-- 節點區塊開始 -->
+            
+            <!-- Step 1 -->
+            <div class="step-col" id="node-1">
+                <div class="step-wrapper">
+                    <div class="step-box">
+                        <h3>開始程式</h3><ul><li>打開網頁初始化</li><li>DOMContentLoaded</li></ul>
+                    </div>
+                    <div class="color-block color-green"></div>
+                </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="step-col" id="node-2" style="margin-left: 40px;">
+                <div class="step-wrapper">
+                    <div class="step-box">
+                        <h3>使用手機鏡頭取得圖片</h3><ul><li>請求相機權限</li><li>顯示影像串流</li></ul>
+                    </div>
+                    <div class="screenshot-block"><img src="../documentation/screenshots/使用手機鏡頭取得圖片.jpg"></div>
+                </div>
+            </div>
+
+            <!-- Step 3 (分岔起點) -->
+            <div class="step-col" id="node-3" style="margin-left: 40px;">
+                <div class="step-wrapper">
+                    <div class="step-box">
+                        <h3>圖片</h3><ul><li>擷取當前影格</li><li>凍結相機預覽</li></ul>
+                    </div>
+                    <div class="screenshot-block"><img src="../documentation/screenshots/圖片.jpg"></div>
+                </div>
+            </div>
+
+            <!-- 雙分支結構 -->
+            <div class="parallel-container">
+                <!-- 上方分支 (TM) -->
+                <div class="branch-flow">
+                    <div class="step-col" id="node-4t">
+                        <div class="step-wrapper">
+                            <div class="step-box">
+                                <h3>使用 TM 演算法分析</h3><ul><li>載入 TM 模型</li><li>執行 model.predict()</li></ul>
+                            </div>
+                            <div class="screenshot-block"><img src="../documentation/screenshots/teach_machine_download_tenflow_js.png"></div>
+                        </div>
+                    </div>
+                    <div class="step-col" id="node-5t">
+                        <div class="step-wrapper">
+                            <div class="step-box">
+                                <h3>結果 (Local)</h3><ul><li>最高機率類別</li><li>判斷閾值 (70%)</li></ul>
+                            </div>
+                            <div class="color-block color-amber"></div>
+                        </div>
+                    </div>
+                    <div class="step-col" id="node-6t">
+                        <div class="step-wrapper">
+                            <div class="step-box">
+                                <h3>螢幕與喇叭告知結果</h3><ul><li>顯示卡片</li><li>語音播報</li></ul>
+                            </div>
+                            <div class="color-block color-sky"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 下方分支 (AI) -->
+                <div class="branch-flow">
+                    <div class="step-col" id="node-4b">
+                        <div class="step-wrapper">
+                            <div class="step-box">
+                                <h3>AI Chat 分析</h3><ul><li>送入 AI 處理</li><li>提取特徵與意圖</li></ul>
+                            </div>
+                            <div class="screenshot-block"><img src="../documentation/screenshots/update_photo_and_test_model.png"></div>
+                        </div>
+                    </div>
+                    <div class="step-col" id="node-5b">
+                        <div class="step-wrapper">
+                            <div class="step-box">
+                                <h3>Serverless + API</h3><ul><li>呼叫 Vercel</li><li>Google API 處理</li></ul>
+                            </div>
+                            <div class="screenshot-block"><img src="../documentation/screenshots/vercel.png"></div>
+                        </div>
+                    </div>
+                    <div class="step-col" id="node-6b">
+                        <div class="step-wrapper">
+                            <div class="step-box">
+                                <h3>Response</h3><ul><li>獲得雲端結果</li><li>顯示最終解答</li></ul>
+                            </div>
+                            <div class="screenshot-block"><img src="../documentation/screenshots/google_api.png"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 7 (匯集點) -->
+            <div class="step-col" id="node-7">
+                <div class="step-wrapper">
+                    <div class="branch-container">
+                        <div class="step-box decision">
+                            <h3>程式是否被關閉？</h3><ul><li>選擇繼續或離開</li></ul>
+                        </div>
+                        <div style="padding:4px;"><svg viewBox="0 0 20 16" width="20"><line x1="10" y1="0" x2="10" y2="10" stroke="#333" stroke-width="3"/><polygon points="4,10 10,16 16,10" fill="#333"/></svg></div>
+                        <div class="branch-row">
+                            <div class="branch-item">
+                                <span class="branch-label no">否</span>
+                                <div class="branch-box no">繼續辨識</div>
+                                <div class="loop-label">↩ 回到取得圖片</div>
+                            </div>
+                            <div class="branch-item">
+                                <span class="branch-label yes">是</span>
+                                <div class="branch-box yes">結束程式</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div id="image-modal" class="modal">
+        <span class="modal-close" id="modal-close">&times;</span>
+        <img class="modal-content" id="modal-img">
+    </div>
+
+    <!-- 動態繪製連線的 Script -->
+    <script>
+        function drawLines() {
+            const svg = document.getElementById('connection-lines');
+            const container = document.getElementById('flowchart');
+            
+            // 設定 SVG 尺寸等於捲動內容大小
+            svg.setAttribute('width', container.scrollWidth);
+            svg.setAttribute('height', container.scrollHeight);
+            svg.innerHTML = ''; // 清除舊線條
+
+            // 畫線工具函數
+            function createPath(startX, startY, endX, endY, isCurve) {
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                
+                let d = "";
+                if (isCurve) {
+                    // S型貝茲曲線 (分岔/匯集用)
+                    const midX = (startX + endX) / 2;
+                    d = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+                } else {
+                    // 直線
+                    d = `M ${startX} ${startY} L ${endX} ${endY}`;
+                }
+                
+                path.setAttribute("d", d);
+                path.setAttribute("stroke", "#333");
+                path.setAttribute("stroke-width", "4");
+                path.setAttribute("fill", "none");
+                
+                // 畫箭頭
+                const arrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+                arrow.setAttribute("points", `${endX-10},${endY-8} ${endX+2},${endY} ${endX-10},${endY+8}`);
+                arrow.setAttribute("fill", "#333");
+
+                svg.appendChild(path);
+                svg.appendChild(arrow);
+            }
+
+            // 取得元素的輸出/輸入座標點 (鎖定在白底 Box 的兩側中間)
+            function getPoint(elementId, type) {
+                const node = document.getElementById(elementId);
+                const box = node.querySelector('.step-box'); // 找尋真正發出線的方塊
+                const cRect = container.getBoundingClientRect();
+                const bRect = box.getBoundingClientRect();
+                
+                // 相對容器的純座標 (考慮捲動)
+                const relativeX = bRect.left - cRect.left + container.scrollLeft;
+                const relativeY = bRect.top - cRect.top + container.scrollTop;
+
+                const y = relativeY + (box.offsetHeight / 2);
+                const x = type === 'out' ? relativeX + box.offsetWidth : relativeX;
+                return { x, y };
+            }
+
+            // 直線連線
+            const linearConnections = [
+                ['node-1', 'node-2'],
+                ['node-2', 'node-3'],
+                ['node-4t', 'node-5t'],
+                ['node-5t', 'node-6t'],
+                ['node-4b', 'node-5b'],
+                ['node-5b', 'node-6b']
+            ];
+
+            linearConnections.forEach(([from, to]) => {
+                const pt1 = getPoint(from, 'out');
+                const pt2 = getPoint(to, 'in');
+                createPath(pt1.x, pt1.y, pt2.x, pt2.y, false);
+            });
+
+            // 曲線分岔連線 (從節點3 出發)
+            const pt3 = getPoint('node-3', 'out');
+            const pt4t = getPoint('node-4t', 'in');
+            const pt4b = getPoint('node-4b', 'in');
+            createPath(pt3.x, pt3.y, pt4t.x, pt4t.y, true);
+            createPath(pt3.x, pt3.y, pt4b.x, pt4b.y, true);
+
+            // 曲線匯集連線 (通往節點7)
+            const pt6t = getPoint('node-6t', 'out');
+            const pt6b = getPoint('node-6b', 'out');
+            const pt7 = getPoint('node-7', 'in');
+            createPath(pt6t.x, pt6t.y, pt7.x, pt7.y, true);
+            createPath(pt6b.x, pt6b.y, pt7.x, pt7.y, true);
+        }
+
+        // Lightbox 點擊放大功能
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img');
+        const closeBtn = document.getElementById('modal-close');
+
+        document.querySelectorAll('.screenshot-block img').forEach(img => {
+            img.addEventListener('click', function() {
+                modal.classList.add('show');
+                modalImg.src = this.src;
+            });
+        });
+
+        // 關閉 Modal (點擊 X 或點擊背景)
+        closeBtn.onclick = () => modal.classList.remove('show');
+        modal.onclick = (e) => {
+            if (e.target !== modalImg) {
+                modal.classList.remove('show');
+            }
+        };
+
+        // 初始化與 Resize/Scroll 時重畫確保對齊
+        window.onload = () => setTimeout(drawLines, 200); 
+        window.onresize = drawLines;
+    </script>
+</body>
+</html>
