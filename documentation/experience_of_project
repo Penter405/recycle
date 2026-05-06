@@ -1,0 +1,6 @@
+為了提升國人的垃圾分類意願，本組開始了本專案，
+首先，利用Google 的 Antigravity 進行 vibe coding,
+分為前端程式碼與後端程式碼，並使用vercel 作為serverless 服務。
+從網路上尋找公開的圖片，與本組自行拍照，將這些收集好的訓練資料，以Teachable machine 訓練。
+並將訓練後的模型部屬到前端。為了使國人面對辨識結果與分類知識的疑問，
+本組使用了google API 連接到大模型，以解答國人的疑問，部屬到後端及serverless。
