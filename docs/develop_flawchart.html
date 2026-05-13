@@ -135,15 +135,28 @@
             align-items: center;
         }
 
+        #flowchart.vertical .step-wrapper {
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 18px;
+        }
+
+        #flowchart.vertical .screenshot-block {
+            margin-top: 0;
+        }
+
         #flowchart.vertical .parallel-container {
-            gap: 24px;
-            margin: 24px 0;
+            display: flex;
+            flex-direction: row;
+            gap: 70px;
+            margin: 40px 0;
         }
 
         #flowchart.vertical .branch-flow {
             flex-direction: column;
             align-items: center;
-            gap: 24px;
+            gap: 28px;
         }
 
         .screenshot-block.vertical {
@@ -545,13 +558,17 @@
             function createPath(startX, startY, endX, endY, isCurve) {
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 
+                const isVertical = flowchart.classList.contains('vertical');
                 let d = "";
                 if (isCurve) {
-                    // S型貝茲曲線 (分岔/匯集用)
-                    const midX = (startX + endX) / 2;
-                    d = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+                    if (isVertical) {
+                        const midY = (startY + endY) / 2;
+                        d = `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
+                    } else {
+                        const midX = (startX + endX) / 2;
+                        d = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+                    }
                 } else {
-                    // 直線
                     d = `M ${startX} ${startY} L ${endX} ${endY}`;
                 }
                 
@@ -560,9 +577,22 @@
                 path.setAttribute("stroke-width", "4");
                 path.setAttribute("fill", "none");
                 
-                // 畫箭頭
                 const arrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-                arrow.setAttribute("points", `${endX-10},${endY-8} ${endX+2},${endY} ${endX-10},${endY+8}`);
+                let points;
+                if (Math.abs(endY - startY) > Math.abs(endX - startX)) {
+                    if (endY >= startY) {
+                        points = `${endX-6},${endY-10} ${endX+6},${endY-10} ${endX},${endY}`;
+                    } else {
+                        points = `${endX-6},${endY+10} ${endX+6},${endY+10} ${endX},${endY}`;
+                    }
+                } else {
+                    if (endX >= startX) {
+                        points = `${endX-10},${endY-8} ${endX+2},${endY} ${endX-10},${endY+8}`;
+                    } else {
+                        points = `${endX+10},${endY-8} ${endX-2},${endY} ${endX+10},${endY+8}`;
+                    }
+                }
+                arrow.setAttribute("points", points);
                 arrow.setAttribute("fill", "#333");
 
                 svg.appendChild(path);
@@ -580,8 +610,9 @@
                 const relativeX = bRect.left - cRect.left + container.scrollLeft;
                 const relativeY = bRect.top - cRect.top + container.scrollTop;
 
-                const y = relativeY + (box.offsetHeight / 2);
-                const x = type === 'out' ? relativeX + box.offsetWidth : relativeX;
+                const isVertical = flowchart.classList.contains('vertical');
+                const x = relativeX + (isVertical ? box.offsetWidth / 2 : (type === 'out' ? box.offsetWidth : 0));
+                const y = isVertical ? (type === 'out' ? relativeY + box.offsetHeight : relativeY) : relativeY + (box.offsetHeight / 2);
                 return { x, y };
             }
 
