@@ -11,6 +11,11 @@
             box-sizing: border-box;
         }
 
+        :root {
+            --screenshot-size-vertical: 150px;
+            --screenshot-size-horizontal: 220px;
+        }
+
         body {
             font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
             background: #ffffff;
@@ -41,6 +46,120 @@
             position: relative;
             z-index: 2;
             width: 100%;
+        }
+
+        .settings-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+            text-align: right;
+        }
+
+        .settings-toggle {
+            background: #2d7aff;
+            border: none;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .settings-toggle:hover {
+            background: #1a5dd5;
+        }
+
+        .settings-panel {
+            display: none;
+            margin-top: 10px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid #d1d1d1;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.16);
+            text-align: left;
+        }
+
+        .settings-panel.show {
+            display: block;
+        }
+
+        .settings-panel h3 {
+            margin-bottom: 14px;
+            color: #222;
+            font-size: 14px;
+        }
+
+        .settings-field {
+            margin-bottom: 12px;
+        }
+
+        .settings-field label {
+            display: block;
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 6px;
+        }
+
+        .settings-field select,
+        .settings-field input[type="range"],
+        .settings-field input[type="number"] {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid #c2c2c2;
+            padding: 8px 10px;
+            font-size: 13px;
+        }
+
+        .field-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .value-text {
+            min-width: 40px;
+            text-align: right;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        #flowchart.vertical {
+            flex-direction: column;
+            overflow-x: hidden;
+            overflow-y: auto;
+            align-items: center;
+        }
+
+        #flowchart.vertical .parallel-container {
+            gap: 24px;
+            margin: 24px 0;
+        }
+
+        #flowchart.vertical .branch-flow {
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .screenshot-block.vertical {
+            width: var(--screenshot-size-vertical);
+        }
+
+        .screenshot-block.horizontal {
+            width: var(--screenshot-size-horizontal);
+        }
+
+        .screenshot-block img {
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
         }
 
         /* SVG 圖層放在容器底層 */
@@ -257,7 +376,35 @@
     <div class="wrapper">
         <h2 style="margin-bottom: 20px; color: #333;">系統流程圖與操作截圖對照 - 雙分支版</h2>
         
-        <div class="flowchart-container" id="flowchart">
+        <div class="settings-container">
+            <button type="button" class="settings-toggle" id="settings-toggle">設定</button>
+            <div class="settings-panel" id="settings-panel">
+                <h3>顯示設定</h3>
+                <div class="settings-field">
+                    <label for="orientation-select">排列方向</label>
+                    <select id="orientation-select">
+                        <option value="horizontal">橫向顯示 flawchart</option>
+                        <option value="vertical">直向顯示 flawchart</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label for="vertical-size">直圖片大小</label>
+                    <div class="field-row">
+                        <input type="range" id="vertical-size" min="100" max="420" value="150">
+                        <span class="value-text" id="vertical-size-value">150</span>
+                    </div>
+                </div>
+                <div class="settings-field">
+                    <label for="horizontal-size">橫圖片大小</label>
+                    <div class="field-row">
+                        <input type="range" id="horizontal-size" min="120" max="520" value="220">
+                        <span class="value-text" id="horizontal-size-value">220</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flowchart-container horizontal" id="flowchart">
             <!-- 底層 SVG 畫布，負責所有連線 -->
             <svg id="connection-lines"></svg>
 
@@ -474,7 +621,50 @@
         const modalImg = document.getElementById('modal-img');
         const closeBtn = document.getElementById('modal-close');
 
+        const settingsToggle = document.getElementById('settings-toggle');
+        const settingsPanel = document.getElementById('settings-panel');
+        const orientationSelect = document.getElementById('orientation-select');
+        const verticalSizeInput = document.getElementById('vertical-size');
+        const horizontalSizeInput = document.getElementById('horizontal-size');
+        const verticalSizeValue = document.getElementById('vertical-size-value');
+        const horizontalSizeValue = document.getElementById('horizontal-size-value');
+        const flowchart = document.getElementById('flowchart');
+
+        function updateScreenshotOrientation() {
+            document.querySelectorAll('.screenshot-block').forEach(block => {
+                const img = block.querySelector('img');
+                if (!img || !img.complete) return;
+                const isVertical = img.naturalHeight >= img.naturalWidth;
+                block.classList.toggle('vertical', isVertical);
+                block.classList.toggle('horizontal', !isVertical);
+            });
+        }
+
+        function updateSizeControls() {
+            const verticalVal = verticalSizeInput.value;
+            const horizontalVal = horizontalSizeInput.value;
+            verticalSizeValue.textContent = verticalVal;
+            horizontalSizeValue.textContent = horizontalVal;
+            document.documentElement.style.setProperty('--screenshot-size-vertical', `${verticalVal}px`);
+            document.documentElement.style.setProperty('--screenshot-size-horizontal', `${horizontalVal}px`);
+            setTimeout(drawLines, 120);
+        }
+
+        settingsToggle.addEventListener('click', () => {
+            settingsPanel.classList.toggle('show');
+        });
+
+        orientationSelect.addEventListener('change', () => {
+            flowchart.classList.toggle('vertical', orientationSelect.value === 'vertical');
+            flowchart.classList.toggle('horizontal', orientationSelect.value === 'horizontal');
+            setTimeout(drawLines, 120);
+        });
+
+        verticalSizeInput.addEventListener('input', updateSizeControls);
+        horizontalSizeInput.addEventListener('input', updateSizeControls);
+
         document.querySelectorAll('.screenshot-block img').forEach(img => {
+            img.addEventListener('load', updateScreenshotOrientation);
             img.addEventListener('click', function() {
                 modal.classList.add('show');
                 modalImg.src = this.src;
@@ -490,7 +680,11 @@
         };
 
         // 初始化與 Resize/Scroll 時重畫確保對齊
-        window.onload = () => setTimeout(drawLines, 200); 
+        window.onload = () => {
+            updateScreenshotOrientation();
+            updateSizeControls();
+            setTimeout(drawLines, 200);
+        };
         window.onresize = drawLines;
     </script>
 </body>
