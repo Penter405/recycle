@@ -375,8 +375,9 @@
             display: flex;
             flex-direction: column;
             gap: 40px;
-            margin: 0 40px; /* 給動態繪製折線的留白空間 */
+            margin: 20px 0 0;
             align-items: center;
+            width: 100%;
         }
 
         .branch-flow {
@@ -384,6 +385,7 @@
             align-items: flex-start;
             gap: 40px;
             justify-content: center;
+            width: 100%;
         }
     </style>
 </head>
@@ -453,61 +455,61 @@
                     </div>
                     <div class="screenshot-block"><img src="screenshots/圖片.jpg"></div>
                 </div>
-            </div>
 
-            <!-- 雙分支結構 -->
-            <div class="parallel-container">
-                <!-- 上方分支 (TM) -->
-                <div class="branch-flow">
-                    <div class="step-col" id="node-4t">
-                        <div class="step-wrapper">
-                            <div class="step-box">
-                                <h3>使用 TM 演算法分析</h3><ul><li>載入 TM 模型</li><li>執行 model.predict()</li></ul>
+                <!-- 雙分支結構 -->
+                <div class="parallel-container">
+                    <!-- 上方分支 (TM) -->
+                    <div class="branch-flow">
+                        <div class="step-col" id="node-4t">
+                            <div class="step-wrapper">
+                                <div class="step-box">
+                                    <h3>使用 TM 演算法分析</h3><ul><li>載入 TM 模型</li><li>執行 model.predict()</li></ul>
+                                </div>
+                                <div class="screenshot-block"><img src="screenshots/teach_machine_download_tenflow_js.png"></div>
                             </div>
-                            <div class="screenshot-block"><img src="screenshots/teach_machine_download_tenflow_js.png"></div>
+                        </div>
+                        <div class="step-col" id="node-5t">
+                            <div class="step-wrapper">
+                                <div class="step-box">
+                                    <h3>結果 (Local)</h3><ul><li>最高機率類別</li><li>判斷閾值 (70%)</li></ul>
+                                </div>
+                                <div class="color-block color-amber"></div>
+                            </div>
+                        </div>
+                        <div class="step-col" id="node-6t">
+                            <div class="step-wrapper">
+                                <div class="step-box">
+                                    <h3>螢幕與喇叭告知結果</h3><ul><li>顯示卡片</li><li>語音播報</li></ul>
+                                </div>
+                                <div class="color-block color-sky"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="step-col" id="node-5t">
-                        <div class="step-wrapper">
-                            <div class="step-box">
-                                <h3>結果 (Local)</h3><ul><li>最高機率類別</li><li>判斷閾值 (70%)</li></ul>
+                    <!-- 下方分支 (AI) -->
+                    <div class="branch-flow">
+                        <div class="step-col" id="node-4b">
+                            <div class="step-wrapper">
+                                <div class="step-box">
+                                    <h3>AI Chat 分析</h3><ul><li>送入 AI 處理</li><li>提取特徵與意圖</li></ul>
+                                </div>
+                                <div class="screenshot-block"><img src="screenshots/update_photo_and_test_model.png"></div>
                             </div>
-                            <div class="color-block color-amber"></div>
                         </div>
-                    </div>
-                    <div class="step-col" id="node-6t">
-                        <div class="step-wrapper">
-                            <div class="step-box">
-                                <h3>螢幕與喇叭告知結果</h3><ul><li>顯示卡片</li><li>語音播報</li></ul>
+                        <div class="step-col" id="node-5b">
+                            <div class="step-wrapper">
+                                <div class="step-box">
+                                    <h3>Serverless + API</h3><ul><li>呼叫 Vercel</li><li>Google API 處理</li></ul>
+                                </div>
+                                <div class="screenshot-block"><img src="screenshots/vercel.png"></div>
                             </div>
-                            <div class="color-block color-sky"></div>
                         </div>
-                    </div>
-                </div>
-                <!-- 下方分支 (AI) -->
-                <div class="branch-flow">
-                    <div class="step-col" id="node-4b">
-                        <div class="step-wrapper">
-                            <div class="step-box">
-                                <h3>AI Chat 分析</h3><ul><li>送入 AI 處理</li><li>提取特徵與意圖</li></ul>
+                        <div class="step-col" id="node-6b">
+                            <div class="step-wrapper">
+                                <div class="step-box">
+                                    <h3>Response</h3><ul><li>獲得雲端結果</li><li>顯示最終解答</li></ul>
+                                </div>
+                                <div class="screenshot-block"><img src="screenshots/google_api.png"></div>
                             </div>
-                            <div class="screenshot-block"><img src="screenshots/update_photo_and_test_model.png"></div>
-                        </div>
-                    </div>
-                    <div class="step-col" id="node-5b">
-                        <div class="step-wrapper">
-                            <div class="step-box">
-                                <h3>Serverless + API</h3><ul><li>呼叫 Vercel</li><li>Google API 處理</li></ul>
-                            </div>
-                            <div class="screenshot-block"><img src="screenshots/vercel.png"></div>
-                        </div>
-                    </div>
-                    <div class="step-col" id="node-6b">
-                        <div class="step-wrapper">
-                            <div class="step-box">
-                                <h3>Response</h3><ul><li>獲得雲端結果</li><li>顯示最終解答</li></ul>
-                            </div>
-                            <div class="screenshot-block"><img src="screenshots/google_api.png"></div>
                         </div>
                     </div>
                 </div>
@@ -602,8 +604,8 @@
                 svg.appendChild(arrow);
             }
 
-            // 取得元素的輸出/輸入座標點 (鎖定在白底 Box 的兩側中間)
-            function getPoint(elementId, type) {
+            // 取得元素的輸出/輸入座標點 (鎖定在白底 Box 的適當邊緣或中間)
+            function getPoint(elementId, type, direction = 'default') {
                 const node = document.getElementById(elementId);
                 const box = node.querySelector('.step-box'); // 找尋真正發出線的方塊
                 const cRect = container.getBoundingClientRect();
@@ -612,11 +614,26 @@
                 // 相對容器的純座標 (考慮捲動)
                 const relativeX = bRect.left - cRect.left + container.scrollLeft;
                 const relativeY = bRect.top - cRect.top + container.scrollTop;
+                const centerX = relativeX + box.offsetWidth / 2;
+                const centerY = relativeY + box.offsetHeight / 2;
 
                 const isVertical = flowchart.classList.contains('vertical');
-                const x = relativeX + (isVertical ? box.offsetWidth / 2 : (type === 'out' ? box.offsetWidth : 0));
-                const y = isVertical ? (type === 'out' ? relativeY + box.offsetHeight : relativeY) : relativeY + (box.offsetHeight / 2);
-                return { x, y };
+                if (isVertical) {
+                    if (direction === 'top') return { x: centerX, y: relativeY };
+                    if (direction === 'bottom') return { x: centerX, y: relativeY + box.offsetHeight };
+                    if (direction === 'left') return { x: relativeX, y: centerY };
+                    if (direction === 'right') return { x: relativeX + box.offsetWidth, y: centerY };
+                    return { x: centerX, y: type === 'out' ? relativeY + box.offsetHeight : relativeY };
+                }
+
+                if (direction === 'top') return { x: centerX, y: relativeY };
+                if (direction === 'bottom') return { x: centerX, y: relativeY + box.offsetHeight };
+                if (direction === 'left') return { x: relativeX, y: centerY };
+                if (direction === 'right') return { x: relativeX + box.offsetWidth, y: centerY };
+                return {
+                    x: type === 'out' ? relativeX + box.offsetWidth : relativeX,
+                    y: centerY
+                };
             }
 
             // 直線連線
@@ -636,9 +653,9 @@
             });
 
             // 曲線分岔連線 (從節點3 出發)
-            const pt3 = getPoint('node-3', 'out');
-            const pt4t = getPoint('node-4t', 'in');
-            const pt4b = getPoint('node-4b', 'in');
+            const pt3 = getPoint('node-3', 'out', 'bottom');
+            const pt4t = getPoint('node-4t', 'in', 'top');
+            const pt4b = getPoint('node-4b', 'in', 'top');
             createPath(pt3.x, pt3.y, pt4t.x, pt4t.y, true);
             createPath(pt3.x, pt3.y, pt4b.x, pt4b.y, true);
 
