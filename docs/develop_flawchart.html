@@ -164,8 +164,10 @@
         #flowchart.vertical .parallel-container {
             display: flex;
             flex-direction: row;
-            gap: 70px;
-            margin: 40px 0;
+            gap: 40px;
+            margin: 40px auto;
+            max-width: 100%;
+            justify-content: center;
         }
 
         #flowchart.vertical .branch-flow {
@@ -262,10 +264,14 @@
         .screenshot-block {
             margin-top: 12px;
             width: 150px;
+            min-height: 100px;
             border-radius: 8px;
             overflow: hidden;
             border: 2px dashed #bbb;
             background: #f9f9f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .screenshot-block img {
@@ -410,14 +416,9 @@
 
         #node-3 .screenshot-block {
             margin-top: 12px;
-            min-height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #f0f0f0;
         }
 
-        #node-3 .screenshot-block:empty::after {
+        .screenshot-block:empty::after {
             content: '(無圖片)';
             color: #999;
             font-size: 12px;
@@ -622,11 +623,13 @@
                     d = `M ${startX} ${startY} L ${endX} ${endY}`;
                 } else {
                     if (isVertical) {
-                        const midX = (startX + endX) / 2;
-                        d = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
-                    } else {
+                        // 直向模式：先垂直后水平，主要沿Y轴发展
                         const midY = (startY + endY) / 2;
                         d = `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
+                    } else {
+                        // 橫向模式：先水平后垂直，主要沿X轴发展
+                        const midX = (startX + endX) / 2;
+                        d = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
                     }
                 }
                 
