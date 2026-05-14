@@ -37,15 +37,28 @@
         }
 
         .flowchart-container {
-            display: flex;
-            align-items: flex-start;
-            gap: 20px;
             overflow-x: auto;
             overflow-y: hidden;
             padding: 20px;
             position: relative;
             z-index: 2;
             width: 100%;
+        }
+
+        #flowchart.horizontal {
+            display: grid;
+            grid-template-columns: auto auto auto auto auto;
+            grid-auto-rows: auto;
+            align-items: start;
+            gap: 20px;
+        }
+
+        #flowchart.vertical {
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            overflow-y: auto;
+            align-items: center;
         }
 
         .settings-container {
@@ -129,6 +142,7 @@
         }
 
         #flowchart.vertical {
+            display: flex;
             flex-direction: column;
             overflow-x: hidden;
             overflow-y: auto;
@@ -377,7 +391,6 @@
             gap: 40px;
             margin: 20px 0 0;
             align-items: center;
-            width: 100%;
         }
 
         .branch-flow {
@@ -385,8 +398,33 @@
             align-items: flex-start;
             gap: 40px;
             justify-content: center;
-            width: 100%;
         }
+
+        #node-3 .step-wrapper {
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: flex-start;
+            gap: 20px;
+        }
+
+        #node-3 .screenshot-block {
+            margin-top: 0;
+        }
+
+        #node-3 .parallel-container {
+            width: auto;
+            justify-self: start;
+        }
+
+        #node-3 .branch-flow {
+            width: auto;
+        }
+
+        #node-1 { grid-column: 1; grid-row: 1; }
+        #node-2 { grid-column: 2; grid-row: 1; }
+        #node-3 { grid-column: 3; grid-row: 1; }
+        .parallel-container { grid-column: 3; grid-row: 2; justify-self: start; }
+        #node-7 { grid-column: 5; grid-row: 2; align-self: start; }
     </style>
 </head>
 <body>
@@ -455,11 +493,12 @@
                     </div>
                     <div class="screenshot-block"><img src="screenshots/圖片.jpg"></div>
                 </div>
+            </div>
 
-                <!-- 雙分支結構 -->
-                <div class="parallel-container">
-                    <!-- 上方分支 (TM) -->
-                    <div class="branch-flow">
+            <!-- 雙分支結構 -->
+            <div class="parallel-container">
+                <!-- 上方分支 (TM) -->
+                <div class="branch-flow">
                         <div class="step-col" id="node-4t">
                             <div class="step-wrapper">
                                 <div class="step-box">
