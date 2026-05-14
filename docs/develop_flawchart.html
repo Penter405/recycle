@@ -47,9 +47,10 @@
 
         #flowchart.horizontal {
             display: grid;
-            grid-template-columns: auto auto auto auto auto;
+            grid-template-columns: auto auto auto auto auto auto auto;
             grid-auto-rows: auto;
             align-items: start;
+            justify-items: center;
             gap: 20px;
         }
 
@@ -401,14 +402,25 @@
         }
 
         #node-3 .step-wrapper {
-            flex-direction: row-reverse;
-            align-items: flex-start;
+            flex-direction: column;
+            align-items: center;
             justify-content: flex-start;
-            gap: 20px;
+            gap: 0;
         }
 
         #node-3 .screenshot-block {
-            margin-top: 0;
+            margin-top: 12px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+        }
+
+        #node-3 .screenshot-block:empty::after {
+            content: '(無圖片)';
+            color: #999;
+            font-size: 12px;
         }
 
         #node-3 .parallel-container {
@@ -420,11 +432,11 @@
             width: auto;
         }
 
-        #node-1 { grid-column: 1; grid-row: 1; }
-        #node-2 { grid-column: 2; grid-row: 1; }
-        #node-3 { grid-column: 3; grid-row: 1; }
-        .parallel-container { grid-column: 3; grid-row: 2; justify-self: start; }
-        #node-7 { grid-column: 5; grid-row: 2; align-self: start; }
+        #node-1 { grid-column: 2; grid-row: 1; }
+        #node-2 { grid-column: 3; grid-row: 1; }
+        #node-3 { grid-column: 4; grid-row: 1; }
+        .parallel-container { grid-column: 4; grid-row: 2; justify-self: center; }
+        #node-7 { grid-column: 4; grid-row: 3; align-self: start; }
     </style>
 </head>
 <body>
@@ -603,7 +615,9 @@
                 
                 const isVertical = flowchart.classList.contains('vertical');
                 let d = "";
-                const isStraight = !isCurve || preferStraight || startX === endX || startY === endY;
+                // 橫向模式：保持 Y 相同為直線；直向模式：保持 X 相同為直線
+                const isStraightByMode = isVertical ? startX === endX : startY === endY;
+                const isStraight = !isCurve || preferStraight || isStraightByMode;
                 if (isStraight) {
                     d = `M ${startX} ${startY} L ${endX} ${endY}`;
                 } else {
@@ -692,12 +706,26 @@
                 createPath(pt1.x, pt1.y, pt2.x, pt2.y, false);
             });
 
-            // 曲線分岔連線 (從節點3 出發)
+            // 曲線分岔連線 (從節點3 出發) - 檢查是否有兩個子節點
+            const hasNode4t = document.getElementById('node-4t');
+            const hasNode4b = document.getElementById('node-4b');
             const pt3 = getPoint('node-3', 'out', 'bottom');
-            const pt4t = getPoint('node-4t', 'in', 'top');
-            const pt4b = getPoint('node-4b', 'in', 'top');
-            createPath(pt3.x, pt3.y, pt4t.x, pt4t.y, true);
-            createPath(pt3.x, pt3.y, pt4b.x, pt4b.y, true);
+            
+            if (hasNode4t && hasNode4b) {
+                // 兩個分支: 平分左右
+                const pt4t = getPoint('node-4t', 'in', 'top');
+                const pt4b = getPoint('node-4b', 'in', 'top');
+                createPath(pt3.x, pt3.y, pt4t.x, pt4t.y, true);
+                createPath(pt3.x, pt3.y, pt4b.x, pt4b.y, true);
+            } else if (hasNode4t) {
+                // 只有上方分支: 直線
+                const pt4t = getPoint('node-4t', 'in', 'top');
+                createPath(pt3.x, pt3.y, pt4t.x, pt4t.y, false);
+            } else if (hasNode4b) {
+                // 只有下方分支: 直線
+                const pt4b = getPoint('node-4b', 'in', 'top');
+                createPath(pt3.x, pt3.y, pt4b.x, pt4b.y, false);
+            }
 
             // 曲線匯集連線 (通往節點7) -> 先匯合成一個共同點，再畫一條箭頭線
             const pt6t = getPoint('node-6t', 'out');
