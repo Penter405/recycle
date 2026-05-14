@@ -151,13 +151,20 @@
         }
 
         #flowchart.vertical .step-wrapper {
-            flex-direction: row;
-            align-items: flex-start;
+            display: grid;
+            grid-template-columns: 200px 200px;
             justify-content: center;
+            align-items: center;
             gap: 18px;
         }
 
+        #flowchart.vertical .step-box,
+        #flowchart.vertical .branch-container {
+            justify-self: end;
+        }
+
         #flowchart.vertical .screenshot-block {
+            justify-self: start;
             margin-top: 0;
         }
 
@@ -214,10 +221,15 @@
         }
 
         .step-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             position: relative;
+        }
+
+        #flowchart.horizontal .step-wrapper {
+            display: grid;
+            grid-template-rows: 140px auto;
+            justify-items: center;
+            align-items: center;
+            gap: 12px;
         }
 
         .step-box {
@@ -438,16 +450,7 @@
             justify-content: center;
         }
 
-        #node-3 .step-wrapper {
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 0;
-        }
 
-        #node-3 .screenshot-block {
-            margin-top: 12px;
-        }
     </style>
 </head>
 
