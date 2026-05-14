@@ -376,12 +376,14 @@
             flex-direction: column;
             gap: 40px;
             margin: 0 40px; /* 給動態繪製折線的留白空間 */
+            align-items: center;
         }
 
         .branch-flow {
             display: flex;
             align-items: flex-start;
             gap: 40px;
+            justify-content: center;
         }
     </style>
 </head>
@@ -555,7 +557,7 @@
             svg.innerHTML = ''; // 清除舊線條
 
             // 畫線工具函數
-            function createPath(startX, startY, endX, endY, isCurve) {
+            function createPath(startX, startY, endX, endY, isCurve, hasArrow = true) {
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
                 
                 const isVertical = flowchart.classList.contains('vertical');
@@ -563,10 +565,10 @@
                 if (isCurve) {
                     if (isVertical) {
                         const midY = (startY + endY) / 2;
-                        d = `M ${startX} ${startY} C ${startX} ${midY}, ${endX} ${midY}, ${endX} ${endY}`;
+                        d = `M ${startX} ${startY} L ${startX} ${midY} L ${endX} ${midY} L ${endX} ${endY}`;
                     } else {
                         const midX = (startX + endX) / 2;
-                        d = `M ${startX} ${startY} C ${midX} ${startY}, ${midX} ${endY}, ${endX} ${endY}`;
+                        d = `M ${startX} ${startY} L ${midX} ${startY} L ${midX} ${endY} L ${endX} ${endY}`;
                     }
                 } else {
                     d = `M ${startX} ${startY} L ${endX} ${endY}`;
@@ -576,7 +578,10 @@
                 path.setAttribute("stroke", "#333");
                 path.setAttribute("stroke-width", "4");
                 path.setAttribute("fill", "none");
-                
+                svg.appendChild(path);
+
+                if (!hasArrow) return;
+
                 const arrow = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
                 let points;
                 if (Math.abs(endY - startY) > Math.abs(endX - startX)) {
@@ -594,8 +599,6 @@
                 }
                 arrow.setAttribute("points", points);
                 arrow.setAttribute("fill", "#333");
-
-                svg.appendChild(path);
                 svg.appendChild(arrow);
             }
 
@@ -639,12 +642,15 @@
             createPath(pt3.x, pt3.y, pt4t.x, pt4t.y, true);
             createPath(pt3.x, pt3.y, pt4b.x, pt4b.y, true);
 
-            // 曲線匯集連線 (通往節點7)
+            // 曲線匯集連線 (通往節點7) -> 先匯合成一個共同點，再畫一條箭頭線
             const pt6t = getPoint('node-6t', 'out');
             const pt6b = getPoint('node-6b', 'out');
             const pt7 = getPoint('node-7', 'in');
-            createPath(pt6t.x, pt6t.y, pt7.x, pt7.y, true);
-            createPath(pt6b.x, pt6b.y, pt7.x, pt7.y, true);
+            const mergeX = (pt6t.x + pt6b.x) / 2;
+            const mergeY = Math.max(pt6t.y, pt6b.y) + 40;
+            createPath(pt6t.x, pt6t.y, mergeX, mergeY, true, false);
+            createPath(pt6b.x, pt6b.y, mergeX, mergeY, true, false);
+            createPath(mergeX, mergeY, pt7.x, pt7.y, true, true);
         }
 
         // Lightbox 點擊放大功能
